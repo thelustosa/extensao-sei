@@ -1,4 +1,4 @@
-# SEI AGR — Link automático
+# Sistema Eletrônico de Informações - SEI — Link automático
 
 Detecta números de processo e documento no texto do editor do SEI e aplica o Link SEI em lote, sem precisar inserir um por um pelo diálogo nativo.
 
