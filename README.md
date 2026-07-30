@@ -1,17 +1,19 @@
 # SEI AGR — Link automático
 
-Detecta números de processo e documento no texto do editor do SEI e aplica o **Link SEI**
-em lote, sem precisar inserir um por um pelo diálogo nativo.
+Detecta números de processo e documento no texto do editor do SEI e aplica o Link SEI em lote, sem precisar inserir um por um pelo diálogo nativo.
+
+Status: A extensão vem sendo usada diariamente! Até o momento, está funcionando perfeitamente na versão SEI 5.0.4.
+Contribua: Sugestões, melhorias, dicas e feedbacks são muito bem-vindos!
 
 ## Como usar
 
 Com o documento aberto no editor: **Ctrl+Shift+K** ou o botão *"Link SEI auto"*, à
 direita da barra de ferramentas. Um único Ctrl+Z desfaz a operação inteira.
 
-Exemplo — no texto abaixo, só `80773781` e `202600005004296` viram link:
+Exemplo — no texto abaixo, só `80773781` e `203600005004296` viram link:
 
-> Dispõe sobre o Auto de Infração nº 45680 (**80773781**), em nome da empresa AUTO VIAÇÃO
-> GOIANÉSIA LTDA (CNPJ nº 03.641.223/0001-26), conforme processo nº **202600005004296**.
+> Dispõe sobre o Auto de Infração nº 45680 (sei Nº **80773781**), em nome da empresa AUTO VIAÇÃO
+> BOLINHA LTDA (CNPJ nº 33.333.3333/0001-33), conforme processo nº **203600005004296**.
 
 ## Como funciona
 
