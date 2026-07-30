@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "SEI AGR - Link automatico",
+  "version": "0.1.0",
+  "description": "Detecta numeros de processo e documento no texto do editor do SEI e aplica o link SEI (equivalente ao Ctrl+Shift+L) em lote.",
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.go.gov.br/*controlador.php?acao=editor_montar*",
+        "*://*.go.gov.br/*controlador.php?acao=texto_padrao_interno_alterar*",
+        "*://*.go.gov.br/*controlador.php?acao=texto_padrao_interno_cadastrar*"
+      ],
+      "js": ["detectar.js", "content.js"],
+      "world": "MAIN",
+      "run_at": "document_idle"
+    }
+  ]
+}
