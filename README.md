@@ -12,7 +12,7 @@ direita da barra de ferramentas. Um único Ctrl+Z desfaz a operação inteira.
 
 Exemplo — no texto abaixo, só `80773781` e `203600005004296` viram link:
 
-> Dispõe sobre o Auto de Infração nº 45680 (sei Nº **80773781**), em nome da empresa AUTO VIAÇÃO
+> Dispõe sobre o Auto de Infração nº 11111 (sei Nº **80773781**), em nome da empresa AUTO VIAÇÃO
 > BOLINHA LTDA (CNPJ nº 33.333.3333/0001-33), conforme processo nº **203600005004296**.
 
 ## Como funciona
