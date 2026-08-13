@@ -1,0 +1,10 @@
+# LF no repositorio para todo arquivo de texto. Sem isto um commit feito no
+# Windows reescreve o arquivo inteiro em CRLF e o diff seguinte vira o arquivo
+# todo -- o repositorio gestao-de-autos-ia ja pagou esse preco (54 arquivos
+# "alterados" para uma mudanca de 19).
+* text=auto eol=lf
+
+# Binarios: nunca converter.
+*.zip binary
+*.png binary
+*.ico binary
