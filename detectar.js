@@ -18,4 +18,27 @@ function candidatosProtocolo(texto) {
     return out;
 }
 
-if (typeof module !== 'undefined') module.exports = { RE_PROTOCOLO: RE_PROTOCOLO, candidatosProtocolo: candidatosProtocolo };
+// O processo a que o documento pertence, lido do rodape de referencia que o SEI
+// gera do modelo: "Referência: Processo nº 202600005004559". E o processo do
+// documento, e nao um numero que por acaso apareca no texto redigido -- por
+// isso a marca 'Referência' e obrigatoria antes de cair na varredura generica.
+//
+// O `config.get('sei')` do editor NAO serve para isso: o `idProcedimento` de la
+// e o id interno do SEI (ex.: 8455633), nao o numero visivel do processo.
+var RE_REFERENCIA = /Refer[êe]ncia:\s*Processo\s*n[º°o]?\s*([\d.\/-]{15,25})/i;
+
+function processoDeReferencia(texto) {
+    var m = String(texto || '').match(RE_REFERENCIA);
+    if (m) return m[1];
+    // Reserva, para modelo de documento sem esse rodape: o primeiro numero com
+    // cara de processo (>= 15 digitos), nunca um numero de documento.
+    var achados = candidatosProtocolo(texto || '')
+        .filter(function (c) { return c.num.replace(/\D/g, '').length >= 15; });
+    return achados.length ? achados[0].num : '';
+}
+
+if (typeof module !== 'undefined') module.exports = {
+    RE_PROTOCOLO: RE_PROTOCOLO,
+    candidatosProtocolo: candidatosProtocolo,
+    processoDeReferencia: processoDeReferencia,
+};

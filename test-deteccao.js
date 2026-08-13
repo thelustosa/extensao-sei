@@ -1,6 +1,6 @@
 // node test-deteccao.js
 const assert = require('assert');
-const { candidatosProtocolo } = require('./detectar.js');
+const { candidatosProtocolo, processoDeReferencia } = require('./detectar.js');
 
 const nums = (t) => candidatosProtocolo(t).map((c) => c.num);
 
@@ -22,5 +22,33 @@ assert.deepStrictEqual(nums('Lei no 14.133, de 2021, art. 75'), []);
 // Varios numeros no mesmo texto, com offsets corretos.
 const c = candidatosProtocolo('doc 80773781 e doc 80773999');
 assert.deepStrictEqual(c.map((x) => [x.num, x.start, x.len]), [['80773781', 4, 8], ['80773999', 19, 8]]);
+
+// ── processoDeReferencia: pre-preenche o modal de importacao ───────────────
+
+// O rodape real de um documento do SEI, como saiu do editor.
+assert.strictEqual(
+    processoDeReferencia('Referência: Processo nº 202600005004559 SEI 8441792'),
+    '202600005004559');
+
+// O rodape ganha do texto redigido: o numero do documento e o processo CITADO
+// no corpo nao podem vencer o processo a que o documento pertence.
+assert.strictEqual(
+    processoDeReferencia(
+        'Dispõe sobre o Auto de Infração nº 45680 (80773781), conforme processo ' +
+        'nº 202400029000262.\nReferência: Processo nº 202600005004559 SEI 8441792'),
+    '202600005004559');
+
+// Formato mascarado.
+assert.strictEqual(
+    processoDeReferencia('Referência: Processo n° 12345.678901/2026-99 SEI 8441792'),
+    '12345.678901/2026-99');
+
+// Sem rodape de referencia: cai na varredura, e o numero do DOCUMENTO
+// (7-9 digitos) nao serve de resposta.
+assert.strictEqual(processoDeReferencia('doc 80773781 e processo 202600005004559'),
+    '202600005004559');
+assert.strictEqual(processoDeReferencia('so o doc 80773781 aqui'), '');
+assert.strictEqual(processoDeReferencia(''), '');
+assert.strictEqual(processoDeReferencia(null), '');
 
 console.log('ok');

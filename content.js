@@ -145,9 +145,9 @@
 
     // Ícones SVG de status para os toasts
     var TOAST_ICONS = {
-        ok: '<svg class="sei-agr-toast-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="#00A859" opacity="0.12"/><path d="M8 12.5l2.5 2.5 5.5-5.5" stroke="#00A859" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-        erro: '<svg class="sei-agr-toast-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="#EF4444" opacity="0.12"/><path d="M15 9l-6 6M9 9l6 6" stroke="#EF4444" stroke-width="2" stroke-linecap="round"/></svg>',
-        neutro: '<svg class="sei-agr-toast-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="#2596be" opacity="0.12"/><path d="M12 8v4M12 16h.01" stroke="#2596be" stroke-width="2" stroke-linecap="round"/></svg>'
+        ok: '<svg class="sei-agr-toast-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="currentColor" opacity="0.12"/><path d="M8 12.5l2.5 2.5 5.5-5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        erro: '<svg class="sei-agr-toast-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="currentColor" opacity="0.12"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+        neutro: '<svg class="sei-agr-toast-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="currentColor" opacity="0.12"/><path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
     };
 
     // tipo: 'ok' | 'erro' | '' (neutro). Recria o elemento a cada aviso para que a
@@ -236,74 +236,81 @@
     }
 
     // ── CSS ────────────────────────────────────────────────────────────────
-    // Cores: Teal primário (#2596be), Amarelo (#FFD100), Âmbar (#FFA800).
+    // Paleta local: teal é ação; amarelo deixa de competir com os botões e
+    // fica reservado para destaques do produto/estado.
     // Especificidade alta (classe dupla) para vencer as regras do CKEditor.
     var B = 'button.sei-agr-btn.sei-agr-btn';
     var CSS = [
+        // ── Tokens locais ─────────────────────────────────────────────────
+        ':root{--sei-agr-accent:#0B6E8D;--sei-agr-accent-hover:#095D75;',
+        '--sei-agr-accent-link:#0B6E8D;--sei-agr-accent-soft:rgba(11,110,141,.10);',
+        '--sei-agr-ink:#17313D;--sei-agr-muted:#5A6D7C;--sei-agr-border:#C7D7DE;',
+        '--sei-agr-surface:#FFFFFF;--sei-agr-subtle:#F4F8FA;--sei-agr-focus:#0B2A3A;',
+        '--sei-agr-on-accent:#FFFFFF;--sei-agr-success:#0B6B3A;--sei-agr-danger:#B42318;',
+        '--sei-agr-overlay:rgba(13,32,41,.52);--sei-agr-shadow:rgba(13,32,41,.16)}',
+        '@media (prefers-color-scheme:dark){:root{--sei-agr-accent-link:#7BD3E4;',
+        '--sei-agr-accent-soft:rgba(123,211,228,.16);--sei-agr-ink:#F2F7F8;',
+        '--sei-agr-muted:#B4C5CC;--sei-agr-border:#3D5964;--sei-agr-surface:#14252E;',
+        '--sei-agr-subtle:#1C333D;--sei-agr-focus:#D7F3FA;--sei-agr-overlay:rgba(0,0,0,.68);',
+        '--sei-agr-shadow:rgba(0,0,0,.42);--sei-agr-success:#49D39A;--sei-agr-danger:#FF8B82}}',
+
         // ── Botão principal ──────────────────────────────────────────────
         B + '{position:relative;overflow:hidden;isolation:isolate;',
         'display:inline-flex;align-items:center;justify-content:center;align-self:center;',
-        'gap:5px;height:26px;padding:0 10px;margin:0 4px 0 auto;',
-        'border:1px solid rgba(255,255,255,.12);border-radius:5px;cursor:pointer;white-space:nowrap;',
+        'gap:6px;height:30px;padding:0 10px;margin:0 4px 0 auto;',
+        'border:1px solid var(--sei-agr-accent);border-radius:6px;cursor:pointer;white-space:nowrap;',
         'font:600 11px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:.01em;',
-        'color:#fff !important;-webkit-text-fill-color:#fff !important;',
-        'background:linear-gradient(145deg,#2596be 0%,#1B7A9E 100%);',
-        'box-shadow:0 1px 3px rgba(37,150,190,.22),inset 0 1px 0 rgba(255,255,255,.1);',
-        'transition:all .22s cubic-bezier(.4,0,.2,1);box-sizing:border-box}',
+        'color:var(--sei-agr-on-accent) !important;-webkit-text-fill-color:currentColor !important;',
+        'background:var(--sei-agr-accent);',
+        'box-shadow:0 1px 2px var(--sei-agr-shadow);',
+        'transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease,',
+        'transform .16s ease;box-sizing:border-box}',
 
-        // Cor de texto forçada em todos os filhos
-        B + ' *{color:#fff !important;-webkit-text-fill-color:#fff !important}',
+        // Os ícones usam currentColor para que o secundário possa ser escuro.
+        B + ' *{color:inherit !important;-webkit-text-fill-color:currentColor !important}',
         B + '>*{position:relative;z-index:1}',
         B + ' svg{flex:none}',
         // Rótulo: transição suave para esconder em telas estreitas
-        B + ' .sei-agr-rotulo{transition:opacity .2s ease,max-width .25s ease;',
+        B + ' .sei-agr-rotulo{transition:opacity .16s ease;',
         'overflow:hidden;max-width:200px;opacity:1}',
 
-        // Swoosh AGR: tons de amarelo/âmbar varrendo no hover
-        B + '::before{content:"";position:absolute;inset:0;z-index:0;',
-        'background:linear-gradient(105deg,transparent 15%,rgba(255,168,0,.4) 40%,rgba(255,209,0,.45) 55%,rgba(255,230,100,.3) 70%,transparent 85%);',
-        'transform:translateX(-130%)}',
-
         // ── Hover ────────────────────────────────────────────────────────
-        B + ':hover{background:linear-gradient(145deg,#2DAAD0 0%,#208CAB 100%);',
-        'box-shadow:0 4px 12px rgba(37,150,190,.35),inset 0 1px 0 rgba(255,255,255,.14);',
+        B + ':hover{background:var(--sei-agr-accent-hover);border-color:var(--sei-agr-accent-hover);',
+        'box-shadow:0 3px 8px var(--sei-agr-shadow);',
         'transform:translateY(-1px)}',
-        B + ':hover::before{animation:sei-agr-swoosh .85s cubic-bezier(.22,.61,.36,1)}',
 
         // ── Active ───────────────────────────────────────────────────────
         B + ':active{transform:translateY(0) scale(.97);',
-        'box-shadow:0 1px 2px rgba(15,34,50,.15),inset 0 1px 3px rgba(0,0,0,.1);',
+        'box-shadow:0 1px 2px var(--sei-agr-shadow);',
         'transition-duration:.08s}',
 
         // ── Focus ────────────────────────────────────────────────────────
-        B + ':focus-visible{outline:2px solid #FFD100;outline-offset:2px}',
+        B + ':focus-visible{outline:2px solid var(--sei-agr-focus);outline-offset:2px;',
+        'box-shadow:0 0 0 4px var(--sei-agr-surface)}',
 
         // ── Loading ──────────────────────────────────────────────────────
-        B + '[disabled]{cursor:default;background:linear-gradient(145deg,#2A90B5 0%,#1F7A9B 100%);',
-        'box-shadow:none;transform:none;border-color:rgba(255,255,255,.08)}',
-        B + '[disabled]::before{animation:none}',
-        B + '.sei-agr-loading{animation:sei-agr-pulse 1.8s ease-in-out infinite}',
+        B + '[disabled]{cursor:default;background:var(--sei-agr-accent-hover);',
+        'box-shadow:none;transform:none;border-color:var(--sei-agr-accent-hover);opacity:.78}',
+        B + '.sei-agr-loading{background:var(--sei-agr-accent-hover)}',
         '.sei-agr-inline-spinner{display:inline-flex;align-items:center}',
 
         // ── Keyframes ────────────────────────────────────────────────────
-        '@keyframes sei-agr-swoosh{from{transform:translateX(-130%)}to{transform:translateX(130%)}}',
         '@keyframes sei-agr-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}',
-        '@keyframes sei-agr-pulse{0%,100%{opacity:1}50%{opacity:.78}}',
         '.sei-agr-spinner{animation:sei-agr-spin .7s linear infinite;transform-origin:center}',
 
         // ── Fallback (fora da toolbar) ───────────────────────────────────
         B + '.solto{position:fixed;bottom:24px;right:24px;z-index:2147483000;margin:0;',
-        'padding:6px 18px;font-size:13px;border-radius:22px;',
-        'box-shadow:0 6px 20px rgba(37,150,190,.3)}',
+        'padding:7px 12px;font-size:13px;border-radius:8px;',
+        'box-shadow:0 6px 18px var(--sei-agr-shadow)}',
 
         // ── Toast ────────────────────────────────────────────────────────
         'div.sei-agr-toast{position:fixed;top:60px;right:16px;z-index:2147483000;',
         'width:auto;max-width:min(380px,calc(100vw - 32px));',
         'padding:12px 38px 12px 14px;border-radius:10px;',
-        'background:rgba(255,255,255,.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);',
-        'color:#1A2F3F;border:1px solid rgba(37,150,190,.12);',
+        'background:var(--sei-agr-surface);',
+        'color:var(--sei-agr-ink);border:1px solid var(--sei-agr-border);',
         'font:500 13px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;',
-        'box-shadow:0 12px 32px -6px rgba(37,150,190,.18),0 4px 10px -2px rgba(37,150,190,.06);',
+        'box-shadow:0 8px 24px var(--sei-agr-shadow);',
         'display:flex;align-items:flex-start;gap:10px;overflow:hidden;',
         'box-sizing:border-box;',
         'animation:sei-agr-toast-in .35s cubic-bezier(.16,1,.3,1)}',
@@ -311,32 +318,28 @@
         // Toast saindo
         'div.sei-agr-toast.saindo{animation:sei-agr-toast-out .3s cubic-bezier(.4,0,.6,1) forwards}',
 
-        // Barra lateral de status (5px, arredondada)
-        '.sei-agr-toast::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:5px;',
-        'border-radius:0 3px 3px 0;background:#2596be}',
-        '.sei-agr-toast.ok::before{background:linear-gradient(180deg,#2596be 0%,#FFD100 100%)}',
-        '.sei-agr-toast.erro::before{background:#EF4444}',
-
         // Ícone de status do toast
-        '.sei-agr-toast-icon{flex:none;margin-top:1px}',
+        '.sei-agr-toast-icon{flex:none;margin-top:1px;color:var(--sei-agr-accent-link)}',
+        '.sei-agr-toast.ok .sei-agr-toast-icon{color:var(--sei-agr-success)}',
+        '.sei-agr-toast.erro .sei-agr-toast-icon{color:var(--sei-agr-danger)}',
 
         // Texto do toast
         '.sei-agr-toast-msg{flex:1;line-height:1.45;word-break:break-word;min-width:0}',
         // Números de protocolo destacados
         '.sei-agr-num{font-weight:700;font-variant-numeric:tabular-nums;',
-        'color:#1A2F3F !important;letter-spacing:.02em}',
+        'color:var(--sei-agr-ink) !important;letter-spacing:.02em}',
 
         // Botão fechar do toast
         '.sei-agr-toast-close{position:absolute;top:8px;right:8px;',
-        'width:22px;height:22px;border:0;border-radius:6px;cursor:pointer;',
-        'background:transparent;color:#8899A6 !important;font:500 16px/1 sans-serif;',
+        'width:28px;height:28px;border:0;border-radius:6px;cursor:pointer;',
+        'background:transparent;color:var(--sei-agr-muted) !important;font:500 16px/1 sans-serif;',
         'display:flex;align-items:center;justify-content:center;',
-        'transition:all .15s ease}',
-        '.sei-agr-toast-close:hover{background:rgba(37,150,190,.08);color:#1A2F3F !important}',
+        'transition:background-color .14s ease,color .14s ease}',
+        '.sei-agr-toast-close:hover{background:var(--sei-agr-accent-soft);color:var(--sei-agr-ink) !important}',
 
         // Toast keyframes
-        '@keyframes sei-agr-toast-in{from{opacity:0;transform:translateY(-12px) scale(.94)}',
-        'to{opacity:1;transform:translateY(0) scale(1)}}',
+        '@keyframes sei-agr-toast-in{from{opacity:0;transform:translateY(-6px)}',
+        'to{opacity:1;transform:translateY(0)}}',
         '@keyframes sei-agr-toast-out{from{opacity:1;transform:translateX(0)}',
         'to{opacity:0;transform:translateX(20px)}}',
 
@@ -352,12 +355,54 @@
         'div.sei-agr-toast{right:8px;left:8px;max-width:none;',
         'font-size:12.5px;padding:10px 34px 10px 12px;border-radius:8px}',
         '.sei-agr-toast-icon{width:16px;height:16px}',
-        '.sei-agr-toast-close{top:6px;right:6px;width:20px;height:20px;font-size:14px}',
+        '.sei-agr-toast-close{top:6px;right:6px;width:28px;height:28px;font-size:14px}',
         '}',
+
+        // ── Botão secundário (Importar Resolução): outline ───────────────
+        B + '.sei-agr-btn-2{margin-left:0;',
+        'background:transparent;color:var(--sei-agr-accent-link) !important;',
+        'border-color:var(--sei-agr-accent-link);box-shadow:none}',
+        B + '.sei-agr-btn-2:hover{background:var(--sei-agr-accent-soft);',
+        'color:var(--sei-agr-accent-link) !important;border-color:var(--sei-agr-accent-link);',
+        'box-shadow:none}',
+
+        // ── Modal de importação ──────────────────────────────────────────
+        '.sei-agr-overlay{position:fixed;inset:0;z-index:2147483100;',
+        'background:var(--sei-agr-overlay);',
+        'display:flex;align-items:flex-start;justify-content:center;padding:8vh 16px 16px;',
+        'animation:sei-agr-toast-in .2s ease}',
+        '.sei-agr-modal{width:100%;max-width:480px;max-height:76vh;display:flex;flex-direction:column;',
+        'background:var(--sei-agr-surface);border-radius:10px;overflow:hidden;',
+        'box-shadow:0 20px 48px var(--sei-agr-shadow);',
+        'font:400 13px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--sei-agr-ink)}',
+        '.sei-agr-modal h2{margin:0;padding:14px 44px 14px 16px;font:600 14px/1.3 inherit;color:var(--sei-agr-ink);',
+        'border-bottom:1px solid var(--sei-agr-border);background:var(--sei-agr-subtle)}',
+        '.sei-agr-modal-x{position:absolute;top:10px;right:10px;width:26px;height:26px;border:0;',
+        'border-radius:7px;background:transparent;color:var(--sei-agr-muted);font:500 19px/1 sans-serif;cursor:pointer;',
+        'display:flex;align-items:center;justify-content:center}',
+        '.sei-agr-modal-x:hover{background:var(--sei-agr-accent-soft);color:var(--sei-agr-ink)}',
+        '.sei-agr-busca{display:flex;gap:6px;padding:12px 16px}',
+        '.sei-agr-busca input{flex:1;min-width:0;height:32px;padding:0 10px;border-radius:7px;',
+        'border:1px solid var(--sei-agr-border);background:var(--sei-agr-surface);',
+        'font:400 13px/1 inherit;color:var(--sei-agr-ink);',
+        'font-variant-numeric:tabular-nums;box-sizing:border-box}',
+        '.sei-agr-busca input:focus{outline:2px solid var(--sei-agr-focus);outline-offset:1px;',
+        'border-color:var(--sei-agr-accent-link)}',
+        '.sei-agr-lista{flex:1;overflow-y:auto;padding:0 8px 8px;margin:0;list-style:none}',
+        '.sei-agr-lista li{margin:0 0 3px}',
+        '.sei-agr-item{display:block;width:100%;text-align:left;border:0;background:transparent;',
+        'padding:9px 10px;border-radius:8px;cursor:pointer;font:400 13px/1.35 inherit;color:var(--sei-agr-ink)}',
+        '.sei-agr-item:hover,.sei-agr-item:focus-visible{background:var(--sei-agr-accent-soft);outline:none}',
+        '.sei-agr-item b{font-weight:600;font-variant-numeric:tabular-nums}',
+        '.sei-agr-item span{display:block;color:var(--sei-agr-muted);font-size:11.5px;margin-top:2px;',
+        'white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+        '.sei-agr-msg{padding:14px 16px;color:var(--sei-agr-muted);text-align:center}',
+        '.sei-agr-msg a{color:var(--sei-agr-accent-link);font-weight:600}',
+        '.sei-agr-modal h2{position:relative}',
 
         // ── Reduced motion ───────────────────────────────────────────────
         '@media (prefers-reduced-motion:reduce){',
-        B + ',' + B + '::before,.sei-agr-toast,.sei-agr-spinner,' + B + '.sei-agr-loading',
+        B + ',.sei-agr-toast,.sei-agr-spinner,' + B + '.sei-agr-loading,.sei-agr-overlay',
         '{animation:none !important;transition:none !important}',
         B + ':active{transform:none}}',
     ].join('');
@@ -366,7 +411,7 @@
     document.head.appendChild(estilo);
 
     // ── Ícone principal: corrente/elo moderno ─────────────────────────────
-    var ICONE = '<svg class="sei-agr-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff"' +
+    var ICONE = '<svg class="sei-agr-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
         ' stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
         '<path d="M15 7h3a5 5 0 0 1 0 10h-3"/>' +
         '<path d="M9 17H6a5 5 0 0 1 0-10h3"/>' +
@@ -405,6 +450,348 @@
         }
     }, true);
 
-    console.log('[sei-agr] carregado - Ctrl+Shift+K ou botao no canto inferior direito');
-})();
+    // ═══════════════════════════════════════════════════════════════════════
+    // Importar Resolucao Gerada
+    //
+    // Busca a minuta no Gestao de Autos IA (gestao-autos.duckdns.org) e cola
+    // ementa / considerandos / artigos nos blocos correspondentes do modelo de
+    // Resolucao do SEI.
+    // ═══════════════════════════════════════════════════════════════════════
 
+    // ── Canal com o service worker, via ponte.js ─────────────────────────
+    // Este arquivo roda no mundo MAIN e nao tem chrome.runtime; ponte.js roda
+    // no mundo ISOLATED e repassa. O token nunca chega aqui.
+    var seqApi = 0;
+    function api(acao, arg) {
+        return new Promise(function (resolve) {
+            var id = 'sei-agr-' + (++seqApi);
+            var expirou = setTimeout(function () {
+                window.removeEventListener('message', ouvir);
+                resolve({ ok: false, erro: 'A extensão não respondeu. Recarregue a página (F5).' });
+            }, 20000);
+            function ouvir(ev) {
+                if (ev.source !== window || !ev.data || ev.data.seiAgrResposta !== id) return;
+                clearTimeout(expirou);
+                window.removeEventListener('message', ouvir);
+                resolve(ev.data.payload);
+            }
+            window.addEventListener('message', ouvir);
+            window.postMessage({ seiAgrPedido: id, acao: acao, arg: arg }, location.origin);
+        });
+    }
+
+    function avisarErroApi(r) {
+        if (r.semSessao) {
+            return aviso('Entre no Gestão de Autos IA (' + r.loginUrl + ') e tente de novo.', 'erro');
+        }
+        aviso(r.erro || 'Falha ao consultar o Gestão de Autos IA.', 'erro');
+    }
+
+    // ── Mapeamento dos blocos da Resolucao ───────────────────────────────
+    // O documento do SEI 5 e multi-root: cada bloco do modelo (ementa,
+    // considerandos, RESOLVE:, artigos) e um root separado. A ordem de
+    // getRootNames() e a de registro, nao a visual -- por isso a ordenacao sai
+    // da posicao real no DOM.
+    function rootsEmOrdem(ed) {
+        return ed.model.document.getRootNames()
+            .map(function (nome) {
+                var el;
+                try { el = ed.ui.getEditableElement(nome); } catch (e) { el = null; }
+                if (!el) return null;
+                return {
+                    nome: nome,
+                    el: el,
+                    editavel: el.getAttribute('contenteditable') === 'true',
+                    texto: (el.innerText || '').replace(/\s+/g, ' ').trim(),
+                    // A classe do editable identifica a seção principal
+                    // ('infra-editor__secao-principal' = os artigos).
+                    classe: el.className || '',
+                    // O estilo do parágrafo identifica a ementa
+                    // ('Texto_Ementa'), e é o que a colagem tem que preservar.
+                    estilo: estiloDoRoot(ed, nome),
+                };
+            })
+            .filter(Boolean)
+            .sort(function (a, b) {
+                var p = a.el.compareDocumentPosition(b.el);
+                if (p & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
+                if (p & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+                return 0;
+            });
+    }
+
+    // mapearBlocos/blocosOcupados vem de blocos.js (funcao pura, testada em
+    // test-blocos.js). Aqui so a leitura do DOM.
+    function blocosResolucao(ed) {
+        return mapearBlocos(rootsEmOrdem(ed));
+    }
+
+    // ── Colagem ──────────────────────────────────────────────────────────
+
+    // O atributo de modelo `estilo` do primeiro paragrafo do root. E o plugin
+    // Estilo do SEI que o converte na classe do <p> ('Texto_Ementa',
+    // 'Texto_Justificado_Recuo_Primeira_Linha', ...).
+    function estiloDoRoot(ed, nome) {
+        try {
+            var primeiro = ed.model.document.getRoot(nome).getChild(0);
+            return primeiro && primeiro.getAttribute('estilo');
+        } catch (e) { return undefined; }
+    }
+
+    // Carrega o estilo do bloco de destino na propria classe dos <p> colados.
+    //
+    // O plugin Estilo do SEI faz upcast de class="Texto_Ementa" para o atributo
+    // de modelo `estilo` -- e como o documento inteiro e carregado desse mesmo
+    // HTML, esse conversor existe com certeza.
+    //
+    // Medido no editor, substituir o conteudo inteiro do root ja preserva o
+    // estilo em TODOS os paragrafos sozinho, sem isto. Fica porque e uma linha e
+    // cobre o caso em que a minuta traz mais paragrafos do que o bloco tem: aí
+    // o CKEditor cria paragrafo novo, e paragrafo novo o plugin Estilo estiliza
+    // com o proximo estilo da tabela dele, nao com o do destino.
+    // So o `<p>` pelado, que e o que dividir_documento() emite. Casar tambem
+    // `<p ...>` produziria dois atributos `class` no mesmo elemento se a minuta
+    // um dia trouxer um; sem casar, o estilo apenas nao e injetado, e a heranca
+    // do paragrafo de destino continua valendo.
+    function comEstilo(html, estilo) {
+        if (!estilo) return html;
+        return html.split('<p>').join('<p class="' + estilo + '">');
+    }
+
+    // Converte HTML pelo mesmo caminho que o Ctrl+V usa: o data processor gera a
+    // view, o upcast do editor gera o modelo. O contexto '$clipboardHolder' e o
+    // mesmo que o ClipboardPipeline passa -- e o que faz o conversor de `class`
+    // para o atributo `estilo` do SEI rodar aqui igual.
+    function fragmentoDe(ed, html, estilo) {
+        return ed.data.toModel(ed.data.processor.toView(comEstilo(html, estilo)), '$clipboardHolder');
+    }
+
+    // Insere cada bloco no SEU root, numa transacao unica. Devolve os nomes dos
+    // blocos que nao mudaram.
+    //
+    // Por `insertContent` com o range EXPLICITO, e nao disparando um evento de
+    // colagem. O pipeline de clipboard insere onde esta a selecao do DOCUMENTO,
+    // e num documento multi-root nao ha como mover essa selecao para outro root
+    // de forma confiavel: `el.focus()` e assincrono e o CKEditor ressincroniza a
+    // selecao a partir do DOM depois, desfazendo o setSelection. Na pratica as
+    // tres colagens caiam todas no root da secao principal
+    // (infra-editor__secao-principal), duplicadas -- porque a verificacao olhava
+    // o root pretendido, nao via mudanca e ainda tentava a segunda via.
+    //
+    // `insertContent` e exatamente o passo final do pipeline de colagem
+    // (contentInsertion), so sem o chute da selecao: a formatacao herdada
+    // continua a do paragrafo de destino.
+    function colarBlocos(ed, itens) {
+        var antes = itens.map(function (it) { return ed.getData({ rootName: it.bloco.nome }); });
+        // Os fragmentos saem TODOS antes do model.change: se a conversao de um
+        // deles estourar, o documento nao foi tocado.
+        var frags = itens.map(function (it) { return fragmentoDe(ed, it.html, it.bloco.estilo); });
+
+        // Uma transacao: um unico Ctrl+Z desfaz a importacao inteira.
+        ed.model.change(function () {
+            itens.forEach(function (it, i) {
+                var root = ed.model.document.getRoot(it.bloco.nome);
+                // Range no root inteiro: insertContent apaga o que esta
+                // selecionado antes de inserir, entao isto SUBSTITUI o bloco em
+                // vez de acrescentar. E o que faz reimportar nao empilhar.
+                ed.model.insertContent(frags[i], ed.model.createRangeIn(root));
+            });
+        });
+
+        return itens
+            .filter(function (it, i) { return ed.getData({ rootName: it.bloco.nome }) === antes[i]; })
+            .map(function (it) { return it.nome; });
+    }
+
+    function importar(numero) {
+        var ed = editorAtual();
+        if (!ed) return aviso('Editor do SEI não encontrado nesta página.', 'erro');
+
+        var blocos = blocosResolucao(ed);
+        if (!blocos) {
+            console.warn('[sei-agr] roots desta página:', rootsEmOrdem(ed));
+            return aviso('Este documento não parece ser uma Resolução: não encontrei os blocos ' +
+                         'ementa / considerandos / RESOLVE: / artigos.', 'erro');
+        }
+
+        // Sobrescrever texto que o usuario escreveu custa o trabalho dele. Um
+        // Ctrl+Z devolve, mas so se ele perceber a tempo -- por isso pergunta
+        // antes, e so quando ha algo de verdade para perder.
+        var ocupados = blocosOcupados(blocos);
+        if (ocupados.length && !window.confirm(
+            'Os blocos ' + ocupados.join(', ') + ' já têm texto escrito.\n\n' +
+            'Substituir pelo conteúdo da minuta?')) {
+            return;
+        }
+
+        aviso('Buscando a minuta do processo ' + numero + '…');
+        return api('resolucao', numero).then(function (r) {
+            if (!r.ok) return avisarErroApi(r);
+
+            var itens = [
+                { nome: 'ementa', bloco: blocos.ementa, html: r.dados.ementa },
+                { nome: 'considerandos', bloco: blocos.considerandos, html: r.dados.considerandos },
+                { nome: 'artigos', bloco: blocos.artigos, html: r.dados.artigos },
+            ].filter(function (it) { return it.html; });
+
+            if (!itens.length) return aviso('A minuta deste processo veio vazia.', 'erro');
+
+            var falhou;
+            try {
+                falhou = colarBlocos(ed, itens);
+            } catch (e) {
+                console.error('[sei-agr] colagem falhou', e);
+                return aviso('O editor do SEI recusou a colagem: ' + e.message +
+                             '. Nada foi alterado.', 'erro');
+            }
+
+            if (falhou.length === itens.length) {
+                return aviso('O editor do SEI não aceitou nenhum dos blocos.', 'erro');
+            }
+            var msg = (itens.length - falhou.length) + ' de ' + itens.length +
+                      ' blocos preenchidos. Revise e use "Linkar protocolos" para os números. ' +
+                      'Ctrl+Z desfaz a importação inteira.';
+            if (falhou.length) msg = 'Atenção: ' + falhou.join(', ') + ' não colou. ' + msg;
+            aviso(msg, falhou.length ? 'erro' : 'ok');
+        });
+    }
+
+    // O processo deste documento, para o modal já vir preenchido.
+    // A extração é de detectar.js (pura, testada em test-deteccao.js).
+    function processoDaPagina() {
+        try { return processoDeReferencia(document.body.innerText || ''); }
+        catch (e) { return ''; }
+    }
+
+    // ── Modal ────────────────────────────────────────────────────────────
+    function fecharModal() {
+        var o = document.getElementById('seiAgrOverlay');
+        if (o) o.remove();
+        document.removeEventListener('keydown', escFecha, true);
+    }
+    function escFecha(e) {
+        if (e.key === 'Escape') { e.stopPropagation(); fecharModal(); }
+    }
+
+    function abrirModal() {
+        fecharModal();
+        var overlay = document.createElement('div');
+        overlay.id = 'seiAgrOverlay';
+        overlay.className = 'sei-agr-overlay';
+        overlay.innerHTML =
+            '<div class="sei-agr-modal" role="dialog" aria-modal="true" aria-label="Importar resolução gerada">' +
+            '<h2>Importar Resolução Gerada' +
+            '<button type="button" class="sei-agr-modal-x" aria-label="Fechar">&times;</button></h2>' +
+            '<div class="sei-agr-busca">' +
+            '<input type="text" inputmode="numeric" placeholder="Número do processo" aria-label="Número do processo">' +
+            '</div><ul class="sei-agr-lista"></ul>' +
+            '<div class="sei-agr-msg">Carregando os processos recentes…</div></div>';
+
+        overlay.onclick = function (e) { if (e.target === overlay) fecharModal(); };
+        overlay.querySelector('.sei-agr-modal-x').onclick = fecharModal;
+        document.addEventListener('keydown', escFecha, true);
+        document.body.appendChild(overlay);
+
+        var input = overlay.querySelector('input');
+        var lista = overlay.querySelector('.sei-agr-lista');
+        var msg = overlay.querySelector('.sei-agr-msg');
+
+        function dizer(html) { msg.innerHTML = html; msg.style.display = ''; }
+        function calar() { msg.style.display = 'none'; }
+
+        function render(itens) {
+            lista.textContent = '';
+            if (!itens.length) return dizer('Nenhum processo encontrado.');
+            calar();
+            itens.forEach(function (it) {
+                var d = it.data || {};
+                var num = d.processo || String(it.id);
+                var li = document.createElement('li');
+                var b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'sei-agr-item';
+                // textContent nos dois: razao social e nome de arquivo vem do
+                // PDF do usuario e nao podem virar HTML dentro do SEI.
+                var forte = document.createElement('b');
+                forte.textContent = num;
+                var sub = document.createElement('span');
+                sub.textContent = [d.razao_social, d.numero_auto && 'Auto ' + d.numero_auto, it.fileName]
+                    .filter(Boolean).join(' · ');
+                b.appendChild(forte);
+                b.appendChild(sub);
+                b.onclick = function () { fecharModal(); importar(num); };
+                li.appendChild(b);
+                lista.appendChild(li);
+            });
+        }
+
+        function carregar(acao, arg) {
+            lista.textContent = '';
+            dizer('Buscando…');
+            api(acao, arg).then(function (r) {
+                if (!r.ok) {
+                    if (r.semSessao) {
+                        return dizer('Sem sessão no Gestão de Autos IA.<br><a href="' + r.loginUrl +
+                                     '" target="_blank" rel="noopener">Entrar no sistema</a>, ' +
+                                     'depois reabra esta janela.');
+                    }
+                    return dizer(r.erro || 'Falha na consulta.');
+                }
+                render(Array.isArray(r.dados) ? r.dados : []);
+            });
+        }
+
+        // Enter com um número de processo completo importa direto, sem lista:
+        // é o caminho de quem já sabe o número.
+        var buscaTimer;
+        input.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            var v = input.value.replace(/\D/g, '');
+            if (v.length >= 15) { fecharModal(); importar(v); }
+        });
+        input.addEventListener('input', function () {
+            clearTimeout(buscaTimer);
+            var v = input.value.trim();
+            buscaTimer = setTimeout(function () {
+                carregar(v ? 'buscar' : 'recentes', v);
+            }, 350);
+        });
+
+        var n = processoDaPagina();
+        if (n) input.value = n;
+
+        input.focus();
+        input.select();
+        carregar('recentes', '');
+    }
+
+    // ── Botao ────────────────────────────────────────────────────────────
+    var ICONE_IMPORTAR = '<svg class="sei-agr-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
+        ' stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>';
+
+    var botaoImportar = document.createElement('button');
+    botaoImportar.type = 'button';
+    botaoImportar.className = 'sei-agr-btn sei-agr-btn-2';
+    botaoImportar.innerHTML = ICONE_IMPORTAR + '<span class="sei-agr-rotulo">Importar Resolução</span>';
+    botaoImportar.title = 'Cola a minuta gerada pelo Gestão de Autos IA nos blocos da Resolução';
+    botaoImportar.onclick = abrirModal;
+
+    // Entra ao lado do primeiro botao. `botao` ja carrega o margin-left:auto
+    // que empurra a dupla para a direita da toolbar.
+    var tentativas2 = 0;
+    (function encaixar2() {
+        if (botao.parentNode) {
+            return botao.parentNode.insertBefore(botaoImportar, botao.nextSibling);
+        }
+        if (++tentativas2 > 45) { // ~22s, um pouco depois do primeiro botao desistir
+            botaoImportar.classList.add('solto');
+            botaoImportar.style.right = '210px';
+            return document.body.appendChild(botaoImportar);
+        }
+        setTimeout(encaixar2, 500);
+    })();
+
+    console.log('[sei-agr] carregado - Ctrl+Shift+K ou botoes na toolbar');
+})();
