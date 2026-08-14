@@ -1,1 +1,5 @@
-.zip
+*.zip
+test-visual.html
+test-visual.png
+test-visual-mobile.png
+test-visual-ckeditor.png

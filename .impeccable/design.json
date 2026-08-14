@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-14T11:21:06.064Z",
+  "title": "Design System: SEI AGR",
+  "extensions": {
+    "colorMeta": {
+      "agr-action": { "role": "primary", "displayName": "Verde de Comando AGR", "canonical": "#007A4E", "tonalRamp": ["oklch(15% 0.116 159.6)", "oklch(25% 0.116 159.6)", "oklch(38% 0.116 159.6)", "oklch(50% 0.116 159.6)", "oklch(62% 0.116 159.6)", "oklch(74% 0.116 159.6)", "oklch(86% 0.116 159.6)", "oklch(95% 0.116 159.6)"] },
+      "agr-action-hover": { "role": "primary", "displayName": "Verde de Comando Profundo", "canonical": "#00663F", "tonalRamp": ["oklch(15% 0.104 158.7)", "oklch(25% 0.104 158.7)", "oklch(38% 0.104 158.7)", "oklch(50% 0.104 158.7)", "oklch(62% 0.104 158.7)", "oklch(74% 0.104 158.7)", "oklch(86% 0.104 158.7)", "oklch(95% 0.104 158.7)"] },
+      "agr-action-active": { "role": "primary", "displayName": "Verde de Comando Ativo", "canonical": "#005434", "tonalRamp": ["oklch(15% 0.090 159.4)", "oklch(25% 0.090 159.4)", "oklch(38% 0.090 159.4)", "oklch(50% 0.090 159.4)", "oklch(62% 0.090 159.4)", "oklch(74% 0.090 159.4)", "oklch(86% 0.090 159.4)", "oklch(95% 0.090 159.4)"] },
+      "agr-action-text": { "role": "primary", "displayName": "Verde de Texto Institucional", "canonical": "#00754A", "tonalRamp": ["oklch(15% 0.114 159.3)", "oklch(25% 0.114 159.3)", "oklch(38% 0.114 159.3)", "oklch(50% 0.114 159.3)", "oklch(62% 0.114 159.3)", "oklch(74% 0.114 159.3)", "oklch(86% 0.114 159.3)", "oklch(95% 0.114 159.3)"] },
+      "agr-brand": { "role": "secondary", "displayName": "Verde de Marca AGR", "canonical": "#008C59", "tonalRamp": ["oklch(15% 0.130 159.1)", "oklch(25% 0.130 159.1)", "oklch(38% 0.130 159.1)", "oklch(50% 0.130 159.1)", "oklch(62% 0.130 159.1)", "oklch(74% 0.130 159.1)", "oklch(86% 0.130 159.1)", "oklch(95% 0.130 159.1)"] },
+      "agr-gold": { "role": "tertiary", "displayName": "Ouro AGR", "canonical": "#F9DA2A", "tonalRamp": ["oklch(15% 0.175 98.1)", "oklch(25% 0.175 98.1)", "oklch(38% 0.175 98.1)", "oklch(50% 0.175 98.1)", "oklch(62% 0.175 98.1)", "oklch(74% 0.175 98.1)", "oklch(86% 0.175 98.1)", "oklch(95% 0.175 98.1)"] },
+      "ink": { "role": "neutral", "displayName": "Tinta Institucional", "canonical": "#1C231E", "tonalRamp": ["oklch(15% 0.014 154.2)", "oklch(25% 0.014 154.2)", "oklch(38% 0.014 154.2)", "oklch(50% 0.014 154.2)", "oklch(62% 0.014 154.2)", "oklch(74% 0.014 154.2)", "oklch(86% 0.014 154.2)", "oklch(95% 0.014 154.2)"] },
+      "text": { "role": "neutral", "displayName": "Texto Operacional", "canonical": "#39423C", "tonalRamp": ["oklch(15% 0.016 156.4)", "oklch(25% 0.016 156.4)", "oklch(38% 0.016 156.4)", "oklch(50% 0.016 156.4)", "oklch(62% 0.016 156.4)", "oklch(74% 0.016 156.4)", "oklch(86% 0.016 156.4)", "oklch(95% 0.016 156.4)"] },
+      "muted": { "role": "neutral", "displayName": "Texto Recuado", "canonical": "#6E756E", "tonalRamp": ["oklch(15% 0.014 145.4)", "oklch(25% 0.014 145.4)", "oklch(38% 0.014 145.4)", "oklch(50% 0.014 145.4)", "oklch(62% 0.014 145.4)", "oklch(74% 0.014 145.4)", "oklch(86% 0.014 145.4)", "oklch(95% 0.014 145.4)"] },
+      "border": { "role": "neutral", "displayName": "Contorno de Superfície", "canonical": "#DCDED9", "tonalRamp": ["oklch(15% 0.007 124.5)", "oklch(25% 0.007 124.5)", "oklch(38% 0.007 124.5)", "oklch(50% 0.007 124.5)", "oklch(62% 0.007 124.5)", "oklch(74% 0.007 124.5)", "oklch(86% 0.007 124.5)", "oklch(95% 0.007 124.5)"] },
+      "field-border": { "role": "neutral", "displayName": "Contorno de Campo", "canonical": "#858B85", "tonalRamp": ["oklch(15% 0.011 145.4)", "oklch(25% 0.011 145.4)", "oklch(38% 0.011 145.4)", "oklch(50% 0.011 145.4)", "oklch(62% 0.011 145.4)", "oklch(74% 0.011 145.4)", "oklch(86% 0.011 145.4)", "oklch(95% 0.011 145.4)"] },
+      "divider": { "role": "neutral", "displayName": "Divisor Suave", "canonical": "#ECEEE9", "tonalRamp": ["oklch(15% 0.007 124.5)", "oklch(25% 0.007 124.5)", "oklch(38% 0.007 124.5)", "oklch(50% 0.007 124.5)", "oklch(62% 0.007 124.5)", "oklch(74% 0.007 124.5)", "oklch(86% 0.007 124.5)", "oklch(95% 0.007 124.5)"] },
+      "surface": { "role": "neutral", "displayName": "Branco de Superfície", "canonical": "#FFFFFF", "tonalRamp": ["oklch(15% 0.000 89.9)", "oklch(25% 0.000 89.9)", "oklch(38% 0.000 89.9)", "oklch(50% 0.000 89.9)", "oklch(62% 0.000 89.9)", "oklch(74% 0.000 89.9)", "oklch(86% 0.000 89.9)", "oklch(95% 0.000 89.9)"] },
+      "success-surface": { "role": "secondary", "displayName": "Superfície de Prestação de Contas", "canonical": "#EFF8F3", "tonalRamp": ["oklch(15% 0.012 162.1)", "oklch(25% 0.012 162.1)", "oklch(38% 0.012 162.1)", "oklch(50% 0.012 162.1)", "oklch(62% 0.012 162.1)", "oklch(74% 0.012 162.1)", "oklch(86% 0.012 162.1)", "oklch(95% 0.012 162.1)"] },
+      "success-surface-hover": { "role": "secondary", "displayName": "Superfície de Prestação Interativa", "canonical": "#E0F1E8", "tonalRamp": ["oklch(15% 0.022 163.0)", "oklch(25% 0.022 163.0)", "oklch(38% 0.022 163.0)", "oklch(50% 0.022 163.0)", "oklch(62% 0.022 163.0)", "oklch(74% 0.022 163.0)", "oklch(86% 0.022 163.0)", "oklch(95% 0.022 163.0)"] },
+      "success-border": { "role": "secondary", "displayName": "Contorno de Prestação de Contas", "canonical": "#C9E2D4", "tonalRamp": ["oklch(15% 0.033 161.2)", "oklch(25% 0.033 161.2)", "oklch(38% 0.033 161.2)", "oklch(50% 0.033 161.2)", "oklch(62% 0.033 161.2)", "oklch(74% 0.033 161.2)", "oklch(86% 0.033 161.2)", "oklch(95% 0.033 161.2)"] },
+      "error": { "role": "error", "displayName": "Vermelho de Recusa", "canonical": "#B3261E", "tonalRamp": ["oklch(15% 0.178 28.7)", "oklch(25% 0.178 28.7)", "oklch(38% 0.178 28.7)", "oklch(50% 0.178 28.7)", "oklch(62% 0.178 28.7)", "oklch(74% 0.178 28.7)", "oklch(86% 0.178 28.7)", "oklch(95% 0.178 28.7)"] },
+      "error-surface": { "role": "error", "displayName": "Superfície de Recusa", "canonical": "#FDF3F2", "tonalRamp": ["oklch(15% 0.011 24.3)", "oklch(25% 0.011 24.3)", "oklch(38% 0.011 24.3)", "oklch(50% 0.011 24.3)", "oklch(62% 0.011 24.3)", "oklch(74% 0.011 24.3)", "oklch(86% 0.011 24.3)", "oklch(95% 0.011 24.3)"] },
+      "error-border": { "role": "error", "displayName": "Contorno de Recusa", "canonical": "#EBC9C6", "tonalRamp": ["oklch(15% 0.039 23.9)", "oklch(25% 0.039 23.9)", "oklch(38% 0.039 23.9)", "oklch(50% 0.039 23.9)", "oklch(62% 0.039 23.9)", "oklch(74% 0.039 23.9)", "oklch(86% 0.039 23.9)", "oklch(95% 0.039 23.9)"] }
+    },
+    "typographyMeta": {
+      "brand": { "displayName": "Brand", "purpose": "Lockup SEI AGR no cabeçalho do painel." },
+      "trigger": { "displayName": "Trigger", "purpose": "Nome compacto SEI AGR na toolbar desktop." },
+      "action": { "displayName": "Action", "purpose": "Rótulos das automações e seus estados." },
+      "body": { "displayName": "Body", "purpose": "Mensagens e leitura operacional do painel." },
+      "label": { "displayName": "Label", "purpose": "Títulos curtos de estado em caixa alta." },
+      "helper": { "displayName": "Helper", "purpose": "Orientação da busca e metadados secundários." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "state-color", "value": "120ms ease", "purpose": "Mudança de fundo em gatilhos e ações." },
+      { "name": "panel-enter", "value": "160ms cubic-bezier(.16,1,.3,1)", "purpose": "Entrada do painel com fade e deslocamento vertical de 4px." },
+      { "name": "message-enter", "value": "180ms ease-out", "purpose": "Fade de uma mensagem nova na área de retorno." },
+      { "name": "confirmation-trace", "value": "320ms cubic-bezier(.16,1,.3,1) 60ms", "purpose": "Desenho do check após uma operação concluída." },
+      { "name": "working-spinner", "value": "700ms linear infinite", "purpose": "Rotação contínua enquanto uma operação está em andamento." }
+    ],
+    "breakpoints": [
+      { "name": "compact", "value": "600px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Toolbar Trigger",
+      "kind": "nav",
+      "refersTo": "toolbar-trigger",
+      "description": "Marca compacta que abre o painel das duas automações na toolbar do SEI.",
+      "html": "<button type=\"button\" class=\"ds-toolbar-trigger\" aria-expanded=\"false\"><span class=\"ds-toolbar-seal\" aria-hidden=\"true\">sei<i>!</i></span><span class=\"ds-toolbar-name\">SEI AGR</span></button>",
+      "css": ".ds-toolbar-trigger { display:inline-flex; align-items:center; gap:8px; height:32px; min-height:32px; padding:0 14px 0 9px; border:0; border-radius:9px; background:var(--sa-verde, #007A4E); color:#fff; font:800 13px/1 var(--sa-fonte, Nunito, system-ui, sans-serif); white-space:nowrap; cursor:pointer; box-shadow:none; transition:background-color .12s ease; } .ds-toolbar-seal { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:6px; background:rgba(255,255,255,.16); color:#fff; font:900 10px/1 var(--sa-fonte, Nunito, system-ui, sans-serif); letter-spacing:-.02em; } .ds-toolbar-seal i { margin-left:.1em; color:var(--sa-amarelo, #F9DA2A); font-style:normal; } .ds-toolbar-name { color:#fff; } .ds-toolbar-trigger:hover { background:var(--sa-verde-h, #00663F); } .ds-toolbar-trigger:active { background:var(--sa-verde-a, #005434); } .ds-toolbar-trigger:focus-visible { outline:2px solid var(--sa-tinta, #1C231E); outline-offset:2px; } @media (max-width:600px) { .ds-toolbar-trigger { position:relative; justify-content:center; width:44px; height:44px; min-height:44px; padding:0; background:transparent; } .ds-toolbar-trigger::before { content:\"\"; position:absolute; inset:6px; border-radius:9px; background:var(--sa-verde, #007A4E); } .ds-toolbar-trigger:hover, .ds-toolbar-trigger:active { background:transparent; } .ds-toolbar-trigger:hover::before { background:var(--sa-verde-h, #00663F); } .ds-toolbar-trigger:active::before { background:var(--sa-verde-a, #005434); } .ds-toolbar-seal { position:relative; z-index:1; } .ds-toolbar-name { display:none; } }"
+    },
+    {
+      "name": "SEI AGR Panel",
+      "kind": "custom",
+      "refersTo": "panel",
+      "description": "Superfície compacta que reúne marca, duas ações e prestação de contas.",
+      "html": "<section class=\"ds-panel\" aria-label=\"SEI AGR\"><header class=\"ds-panel-header\"><span class=\"ds-panel-seal\" aria-hidden=\"true\">sei<i>!</i></span><span class=\"ds-panel-brand\">SEI <i>AGR</i></span></header><div class=\"ds-panel-body\"><strong>Ações</strong><span>Selecione uma automação para continuar.</span><div class=\"ds-panel-area\">Área de mensagens</div></div></section>",
+      "css": ".ds-panel { width:420px; max-width:calc(100vw - 24px); overflow:hidden; background:var(--sa-sup, #FFFFFF); border:1px solid var(--sa-borda, #DCDED9); border-radius:14px; box-shadow:none; color:var(--sa-tinta, #1C231E); font:600 13px/1.45 var(--sa-fonte, Nunito, system-ui, sans-serif); white-space:normal; animation:ds-panel-enter .16s cubic-bezier(.16,1,.3,1); } .ds-panel-header { display:flex; align-items:center; gap:10px; padding:14px 16px; background:var(--sa-verde, #007A4E); } .ds-panel-seal { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:8px; background:rgba(255,255,255,.16); color:#fff; font:900 13px/1 var(--sa-fonte, Nunito, system-ui, sans-serif); } .ds-panel-seal i, .ds-panel-brand i { color:var(--sa-amarelo, #F9DA2A); font-style:normal; } .ds-panel-seal i { margin-left:.1em; } .ds-panel-brand { color:#fff; font:900 16px/1 var(--sa-fonte, Nunito, system-ui, sans-serif); } .ds-panel-brand i { margin-left:5px; letter-spacing:.1em; } .ds-panel-body { display:flex; flex-direction:column; gap:10px; width:100%; min-width:0; padding:16px; overflow-x:hidden; white-space:normal; } .ds-panel-body strong { font-weight:800; } .ds-panel-area { min-width:0; min-height:120px; margin-top:4px; padding-top:12px; overflow-x:hidden; border-top:1px solid var(--sa-linha, #ECEEE9); color:var(--sa-mudo, #6E756E); font-weight:700; font-size:12px; white-space:normal; } @keyframes ds-panel-enter { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } } @media (prefers-reduced-motion:reduce) { .ds-panel { animation:none; } }"
+    },
+    {
+      "name": "Primary Action",
+      "kind": "button",
+      "refersTo": "action-primary",
+      "description": "Ação principal para vincular protocolos, identificada por ponto ouro.",
+      "html": "<button type=\"button\" class=\"ds-action-primary\"><span class=\"ds-action-primary-dot\" aria-hidden=\"true\"></span><span>Linkar protocolos</span></button>",
+      "css": ".ds-action-primary { display:flex; align-items:center; gap:10px; width:100%; min-height:44px; padding:12px 14px; border:0; border-radius:10px; background:var(--sa-verde, #007A4E); color:#fff; font:800 14px/1.2 var(--sa-fonte, Nunito, system-ui, sans-serif); text-align:left; cursor:pointer; box-shadow:none; transition:background-color .12s ease; } .ds-action-primary-dot { flex:none; width:6px; height:6px; border-radius:3px; background:var(--sa-amarelo, #F9DA2A); } .ds-action-primary:hover { background:var(--sa-verde-h, #00663F); } .ds-action-primary:active { background:var(--sa-verde-a, #005434); } .ds-action-primary:focus-visible { outline:2px solid var(--sa-verde-a, #005434); outline-offset:2px; } .ds-action-primary:disabled { cursor:default; background:var(--sa-verde-h, #00663F); }"
+    },
+    {
+      "name": "Working Primary Action",
+      "kind": "button",
+      "refersTo": "action-primary",
+      "description": "Estado ocupado da ação principal com rótulo verbal e spinner inline.",
+      "html": "<button type=\"button\" class=\"ds-action-working\" disabled><span class=\"ds-action-spinner\" aria-hidden=\"true\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\"><circle cx=\"12\" cy=\"12\" r=\"9.5\" stroke=\"currentColor\" stroke-opacity=\".22\" stroke-width=\"2.5\"/><path d=\"M21.5 12a9.5 9.5 0 0 0-9.5-9.5\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"/></svg></span><span>Vinculando…</span></button>",
+      "css": ".ds-action-working { display:flex; align-items:center; gap:10px; width:100%; min-height:44px; padding:12px 14px; border:0; border-radius:10px; background:var(--sa-verde-h, #00663F); color:#fff; font:800 14px/1.2 var(--sa-fonte, Nunito, system-ui, sans-serif); text-align:left; cursor:default; box-shadow:none; } .ds-action-spinner { display:inline-flex; width:16px; height:16px; align-items:center; justify-content:center; } .ds-action-spinner svg { display:block; animation:ds-spinner .7s linear infinite; transform-origin:center; } @keyframes ds-spinner { from { transform:rotate(0); } to { transform:rotate(360deg); } } @media (prefers-reduced-motion:reduce) { .ds-action-spinner svg { animation:none; } }"
+    },
+    {
+      "name": "Secondary Action",
+      "kind": "button",
+      "refersTo": "action-secondary",
+      "description": "Ação de importar Resolução com contorno institucional e ponto verde de marca.",
+      "html": "<button type=\"button\" class=\"ds-action-secondary\"><span class=\"ds-action-secondary-dot\" aria-hidden=\"true\"></span><span>Importar Resolução</span></button>",
+      "css": ".ds-action-secondary { display:flex; align-items:center; gap:10px; width:100%; min-height:44px; padding:10px 12px; border:2px solid var(--sa-verde-txt, #00754A); border-radius:10px; background:var(--sa-sup, #FFFFFF); color:var(--sa-verde-txt, #00754A); font:800 14px/1.2 var(--sa-fonte, Nunito, system-ui, sans-serif); text-align:left; cursor:pointer; box-shadow:none; transition:background-color .12s ease; } .ds-action-secondary-dot { flex:none; width:6px; height:6px; border-radius:3px; background:var(--sa-marca, #008C59); } .ds-action-secondary:hover { background:var(--sa-suave, #EFF8F3); } .ds-action-secondary:active { background:var(--sa-suave-h, #E0F1E8); } .ds-action-secondary:focus-visible { outline:2px solid var(--sa-verde-txt, #00754A); outline-offset:2px; } .ds-action-secondary:disabled { cursor:default; background:var(--sa-sup, #FFFFFF); border-color:var(--sa-mudo, #6E756E); color:var(--sa-mudo, #6E756E); }"
+    },
+    {
+      "name": "Status Message",
+      "kind": "card",
+      "refersTo": "message-success",
+      "description": "Prestação de contas informativa ou bem-sucedida dentro do painel.",
+      "html": "<div class=\"ds-status-message\" role=\"status\"><span class=\"ds-status-title\">Linkar protocolos</span><span class=\"ds-status-body\">3 links aplicados. Sem correspondência: <strong>99999999</strong>.</span></div>",
+      "css": ".ds-status-message { display:flex; flex-direction:column; gap:4px; padding:12px 14px; border:1px solid var(--sa-suave-borda, #C9E2D4); border-radius:10px; background:var(--sa-suave, #EFF8F3); animation:ds-message-enter .18s ease-out; } .ds-status-title { color:var(--sa-verde-txt, #00754A); font:800 11px/1.2 var(--sa-fonte, Nunito, system-ui, sans-serif); letter-spacing:.12em; text-transform:uppercase; } .ds-status-body { color:var(--sa-texto, #39423C); font:600 13px/1.45 var(--sa-fonte, Nunito, system-ui, sans-serif); overflow-wrap:anywhere; } .ds-status-body strong { color:var(--sa-tinta, #1C231E); font-weight:800; font-variant-numeric:tabular-nums; } @keyframes ds-message-enter { from { opacity:0; } to { opacity:1; } } @media (prefers-reduced-motion:reduce) { .ds-status-message { animation:none; } }"
+    },
+    {
+      "name": "Error Message",
+      "kind": "card",
+      "refersTo": "message-error",
+      "description": "Recusa explícita quando a operação não pode prosseguir com segurança.",
+      "html": "<div class=\"ds-error-message\" role=\"alert\"><span class=\"ds-error-title\">Importação recusada</span><span class=\"ds-error-body\">Não foi possível identificar com segurança os blocos da Resolução.</span></div>",
+      "css": ".ds-error-message { display:flex; flex-direction:column; gap:4px; padding:12px 14px; border:1px solid var(--sa-erro-borda, #EBC9C6); border-radius:10px; background:var(--sa-erro-suave, #FDF3F2); animation:ds-error-enter .18s ease-out; } .ds-error-title { color:var(--sa-erro, #B3261E); font:800 11px/1.2 var(--sa-fonte, Nunito, system-ui, sans-serif); letter-spacing:.12em; text-transform:uppercase; } .ds-error-body { color:var(--sa-texto, #39423C); font:600 13px/1.45 var(--sa-fonte, Nunito, system-ui, sans-serif); overflow-wrap:anywhere; } @keyframes ds-error-enter { from { opacity:0; } to { opacity:1; } } @media (prefers-reduced-motion:reduce) { .ds-error-message { animation:none; } }"
+    },
+    {
+      "name": "Process Search Field",
+      "kind": "input",
+      "refersTo": "search-field",
+      "description": "Entrada numérica para localizar uma minuta pelo processo.",
+      "html": "<label class=\"ds-search\"><span class=\"ds-search-label\">Número do processo</span><input class=\"ds-search-input\" inputmode=\"numeric\" placeholder=\"202400006001234\"><span class=\"ds-search-help\">Digite para buscar ou informe o número completo e pressione Enter.</span></label>",
+      "css": ".ds-search { display:flex; flex-direction:column; gap:6px; color:var(--sa-tinta, #1C231E); font-family:var(--sa-fonte, Nunito, system-ui, sans-serif); } .ds-search-label { font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; } .ds-search-input { width:100%; height:38px; padding:0 12px; border:1px solid var(--sa-campo, #858B85); border-radius:10px; background:var(--sa-sup, #FFFFFF); color:var(--sa-tinta, #1C231E); font:700 13px/1 var(--sa-fonte, Nunito, system-ui, sans-serif); font-variant-numeric:tabular-nums; } .ds-search-input::placeholder { color:var(--sa-mudo, #6E756E); opacity:1; font-weight:600; } .ds-search-input:focus { border-color:var(--sa-verde-txt, #00754A); outline:2px solid var(--sa-verde-txt, #00754A); outline-offset:1px; } .ds-search-help { color:var(--sa-mudo, #6E756E); font:600 11px/1.4 var(--sa-fonte, Nunito, system-ui, sans-serif); } @media (max-width:600px) { .ds-search-input { height:44px; font-size:16px; } }"
+    },
+    {
+      "name": "Process List Item",
+      "kind": "button",
+      "refersTo": "process-item",
+      "description": "Resultado selecionável com processo em destaque e metadado truncável.",
+      "html": "<button type=\"button\" class=\"ds-process-item\"><b>202400006001234</b><span>Transportes Goiás Ltda · Auto 4471</span></button>",
+      "css": ".ds-process-item { display:block; width:100%; min-height:44px; padding:8px 10px; border:0; border-radius:8px; background:transparent; color:var(--sa-tinta, #1C231E); font:600 13px/1.35 var(--sa-fonte, Nunito, system-ui, sans-serif); text-align:left; cursor:pointer; } .ds-process-item:hover { background:var(--sa-suave, #EFF8F3); } .ds-process-item:focus-visible { background:var(--sa-suave, #EFF8F3); outline:2px solid var(--sa-verde-txt, #00754A); outline-offset:-2px; } .ds-process-item b { display:block; color:var(--sa-tinta, #1C231E); font:800 13px/1.3 var(--sa-fonte, Nunito, system-ui, sans-serif); font-variant-numeric:tabular-nums; } .ds-process-item span { display:block; margin-top:2px; overflow:hidden; color:var(--sa-mudo, #6E756E); font:600 11.5px/1.3 var(--sa-fonte, Nunito, system-ui, sans-serif); white-space:nowrap; text-overflow:ellipsis; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Comando institucional compacto",
+    "overview": "O SEI AGR deve parecer um controle nativo, confiável e discreto dentro da barra do SEI: uma única marca compacta abre acesso seguro às duas automações e à prestação de contas de cada operação. A presença institucional vem da paleta AGR, do selo vazado e da tipografia sans-serif pesada; a eficiência vem da densidade controlada, dos alvos claros e da hierarquia curta.\n\nO sistema é deliberadamente plano e operacional. Superfícies brancas, bordas finas e mudanças tonais comunicam estrutura e estado sem competir com o documento em edição. Verde conduz ação, ouro identifica a marca ou um ponto de estado, e vermelho aparece apenas para erro. A interface rejeita sombra decorativa, janelas que cubram o editor e ornamentação desvinculada da tarefa.",
+    "keyCharacteristics": [
+      "Marca SEI AGR única, compacta e imediatamente reconhecível.",
+      "Densidade operacional com controles de pelo menos 44px nas ações e no toque móvel.",
+      "Superfícies planas, contornadas e encaixadas no ambiente do SEI.",
+      "Estados explícitos por texto, cor, ponto, spinner ou confirmação.",
+      "Contraste WCAG AA e foco visível como parte do caráter visual."
+    ],
+    "rules": [
+      { "name": "The Contrast Before Brand Rule", "body": "O verde de marca não recebe texto branco; controles textuais usam o verde de comando e preservam o verde de marca apenas como acento.", "section": "colors" },
+      { "name": "The Gold Is a Signal Rule", "body": "O ouro aparece somente no lockup e em pontos de estado; sua raridade mantém o sinal legível.", "section": "colors" },
+      { "name": "The Weight Builds Hierarchy Rule", "body": "Em uma área compacta, altere primeiro peso, caixa e cor; não introduza títulos grandes nem uma segunda família tipográfica.", "section": "typography" },
+      { "name": "The Numbers Stay Stable Rule", "body": "Processos, documentos e contagens usam numerais tabulares e peso 800 para facilitar conferência visual.", "section": "typography" },
+      { "name": "The Editor Remains Primary Rule", "body": "O painel se ancora à toolbar ou ao canto e nunca se transforma em modal sobre o documento.", "section": "layout" },
+      { "name": "The Flat Institutional Surface Rule", "body": "Superfícies permanecem planas em repouso e em interação; não adicionar sombra decorativa a painel, botão, mensagem, campo ou item.", "section": "elevation" },
+      { "name": "The Nested Radius Rule", "body": "A maior curva pertence ao contêiner; elementos internos reduzem progressivamente o raio e nunca ficam mais arredondados que o painel.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do manter uma única marca SEI AGR como porta de entrada para as duas automações.",
+      "Do preservar o gatilho desktop de 32px e o hit area móvel de 44px com quadrado visual de 32px.",
+      "Do usar verde de comando quando houver texto branco e reservar verde de marca e ouro a acentos sem texto corrido.",
+      "Do comunicar toda operação com rótulo explícito, ponto, spinner, check ou mensagem correspondente.",
+      "Do manter foco visível, contraste AA e suporte a `prefers-reduced-motion` em qualquer novo estado."
+    ],
+    "donts": [
+      "Don't adicionar sombras, gradientes, brilho ou elevação decorativa.",
+      "Don't transformar o painel em modal, drawer amplo ou janela que cubra o documento.",
+      "Don't usar o ouro como fundo de controle, texto corrido ou decoração abundante.",
+      "Don't colocar texto branco sobre o verde de marca; esse par não atinge o contraste requerido.",
+      "Don't criar uma terceira ação de mesmo peso sem rever a arquitetura compacta do comando."
+    ]
+  }
+}

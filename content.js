@@ -8,6 +8,10 @@
 (function () {
     'use strict';
 
+    // O content script pode ser reinjetado pelo ciclo de vida do SEI. Repetir a
+    // inicialização duplicaria CSS, botões e listeners na mesma página.
+    if (document.getElementById('seiAgrEstilos')) return;
+
     function editorAtual() {
         var els = document.querySelectorAll('.ck-editor__editable, .ck-content');
         for (var i = 0; i < els.length; i++) {
@@ -21,6 +25,7 @@
     }
 
     var cache = new Map(); // numero -> {id, text} | null
+    var consultasEmAndamento = new Map(); // numero -> Promise<{id, text} | null>
 
     // A resposta e XML. Sucesso traz IdProtocolo/ProtocoloFormatado; numero inexistente
     // volta como <erros><erro descricao="Protocolo nao encontrado.">.
@@ -41,7 +46,9 @@
     // o servidor responde redirecionando para o login.
     function resolverProtocolo(numero, cfg) {
         if (cache.has(numero)) return Promise.resolve(cache.get(numero));
-        return fetch(cfg.urlBuscarProtocoloSei, {
+        if (consultasEmAndamento.has(numero)) return consultasEmAndamento.get(numero);
+
+        var consulta = fetch(cfg.urlBuscarProtocoloSei, {
             method: 'POST',
             credentials: 'same-origin',
             redirect: 'manual', // nao seguir o redirect para o login
@@ -65,7 +72,13 @@
             })
             // Falha de sessao/rede nao entra no cache: senao uma nova tentativa
             // (apos o F5) devolveria o null antigo sem reconsultar.
-            .catch(function (e) { console.error('[sei-agr] consulta falhou', numero, e); return null; });
+            .catch(function (e) { console.error('[sei-agr] consulta falhou', numero, e); return null; })
+            .then(function (resultado) {
+                consultasEmAndamento.delete(numero);
+                return resultado;
+            });
+        consultasEmAndamento.set(numero, consulta);
+        return consulta;
     }
 
     // Cabecalho, rodape de referencia e separadores sao roots read-only: o SEI os gera
@@ -96,6 +109,27 @@
         return alvos;
     }
 
+    // Evita abrir uma conexão por candidato quando a minuta é grande. Seis
+    // consultas mantêm a interface responsiva sem sobrecarregar o endpoint SEI.
+    function resolverAlvos(alvos, cfg) {
+        var respostas = new Array(alvos.length);
+        var proximo = 0;
+        var trabalhadores = Math.min(6, alvos.length);
+
+        function trabalhar() {
+            if (proximo >= alvos.length) return Promise.resolve();
+            var indice = proximo++;
+            return resolverProtocolo(alvos[indice].num, cfg).then(function (resultado) {
+                respostas[indice] = resultado;
+                return trabalhar();
+            });
+        }
+
+        var fila = [];
+        for (var i = 0; i < trabalhadores; i++) fila.push(trabalhar());
+        return Promise.all(fila).then(function () { return respostas; });
+    }
+
     function linkarTudo(ed) {
         var cfg = cfgSei(ed);
         if (!cfg.urlBuscarProtocoloSei) {
@@ -103,11 +137,12 @@
         }
 
         var alvos = coletarAlvos(ed);
-        if (!alvos.length) return aviso('Nenhum número de processo ou documento no texto.');
-        aviso('Consultando ' + alvos.length + (alvos.length === 1 ? ' número' : ' números') + ' no SEI…');
+        if (!alvos.length) return aviso('Nenhum número de processo ou documento no texto.', '', 'Linkar protocolos');
+        aviso('Consultando ' + alvos.length + (alvos.length === 1 ? ' número' : ' números') + ' no SEI…',
+              '', 'Linkar protocolos');
         sessaoRejeitada = false;
 
-        return Promise.all(alvos.map(function (a) { return resolverProtocolo(a.num, cfg); }))
+        return resolverAlvos(alvos, cfg)
             .then(function (protocolos) {
                 var pares = alvos
                     .map(function (a, i) { return { alvo: a, p: protocolos[i] }; })
@@ -117,7 +152,9 @@
                     if (sessaoRejeitada) {
                         return aviso('O SEI recusou a consulta. Recarregue a página (F5) e tente de novo.', 'erro');
                     }
-                    return aviso('Nenhum dos ' + alvos.length + ' números existe neste SEI.');
+                    return aviso(['Nenhum dos ' + alvos.length + ' números existe neste SEI.',
+                                  'Tentados: ' + unicos(alvos.map(numDoAlvo)).join(', ')],
+                                 'erro', 'Linkar protocolos');
                 }
                 // Uma unica transacao: um Ctrl+Z desfaz tudo de uma vez.
                 ed.model.change(function (writer) {
@@ -131,94 +168,126 @@
                                       a.parent, a.offset);
                     }
                 });
+                // O painel presta contas dos dois lados: o que foi tentado e o
+                // que virou link de fato. Números repetidos no texto contam uma
+                // vez só na listagem, mas a contagem de links é a real.
                 var n = pares.length;
-                var faltaram = alvos.length - n;
-                var msg = n + (n === 1 ? ' link aplicado: ' : ' links aplicados: ') +
-                          pares.map(function (x) { return x.alvo.num; }).join(', ');
-                if (faltaram) {
-                    msg += '. ' + faltaram + (faltaram === 1 ? ' número não existe' : ' números não existem') +
-                           ' neste SEI.';
-                }
-                aviso(msg, 'ok');
+                var aplicados = unicos(pares.map(function (x) { return x.alvo.num; }));
+                var ausentes = unicos(alvos.map(numDoAlvo)).filter(function (num) {
+                    return aplicados.indexOf(num) < 0;
+                });
+                var linhas = [alvos.length + (alvos.length === 1 ? ' número tentado, ' : ' números tentados, ') +
+                              n + (n === 1 ? ' link aplicado.' : ' links aplicados.'),
+                              'Vinculados: ' + aplicados.join(', ')];
+                if (ausentes.length) linhas.push('Sem correspondência no SEI: ' + ausentes.join(', '));
+                aviso(linhas, ausentes.length ? '' : 'ok', 'Linkar protocolos');
+                return { linksAplicados: n };
             });
     }
 
-    // Ícones SVG de status para os toasts
-    var TOAST_ICONS = {
-        ok: '<svg class="sei-agr-toast-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="currentColor" opacity="0.12"/><path d="M8 12.5l2.5 2.5 5.5-5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-        erro: '<svg class="sei-agr-toast-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="currentColor" opacity="0.12"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-        neutro: '<svg class="sei-agr-toast-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="currentColor" opacity="0.12"/><path d="M12 8v4M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
-    };
-
-    // tipo: 'ok' | 'erro' | '' (neutro). Recria o elemento a cada aviso para que a
-    // animacao de entrada e saida rode de forma fluida.
-    var avisoTimer;
-    function aviso(msg, tipo) {
-        var antigo = document.getElementById('seiAgrAviso');
-        if (antigo) antigo.remove();
-        clearTimeout(avisoTimer);
-
-        var el = document.createElement('div');
-        el.id = 'seiAgrAviso';
-        el.className = 'sei-agr-toast ' + (tipo || '');
-        el.setAttribute('role', 'status');
-        el.setAttribute('aria-live', 'polite');
-
-        // Ícone de status + texto com números em destaque + botão fechar
-        var icone = tipo === 'ok' ? TOAST_ICONS.ok : tipo === 'erro' ? TOAST_ICONS.erro : TOAST_ICONS.neutro;
-        // Destaca números de protocolo no texto (negrito + tabular-nums)
-        var msgHtml = msg.replace(/(\d{5}\.\d{6}\/\d{4}-\d{2}|\d{7,17})/g,
-            '<strong class="sei-agr-num">$1</strong>');
-        el.innerHTML = icone +
-            '<span class="sei-agr-toast-msg">' + msgHtml + '</span>' +
-            '<button type="button" class="sei-agr-toast-close" aria-label="Fechar" title="Fechar">&times;</button>';
-        el.querySelector('.sei-agr-toast-close').onclick = function () {
-            el.classList.add('saindo');
-            setTimeout(function () { if (el.parentNode) el.remove(); }, 300);
-        };
-
-        // Posicionamento dinâmico: alinha o toast com o botão
-        posicionarToast(el);
-        document.body.appendChild(el);
-
-        avisoTimer = setTimeout(function () {
-            el.classList.add('saindo');
-            setTimeout(function () { if (el.parentNode) el.remove(); }, 300);
-        }, 7000);
+    function unicos(lista) {
+        return lista.filter(function (v, i) { return lista.indexOf(v) === i; });
     }
 
-    // Calcula top e right do toast a partir da posição real do botão no viewport.
-    // Fallback seguro caso o botão não esteja no DOM.
-    function posicionarToast(el) {
-        var rect;
-        try { rect = botao.getBoundingClientRect(); } catch (e) { rect = null; }
-        if (rect && rect.bottom > 0 && rect.right > 0) {
-            el.style.top = Math.round(rect.bottom + 8) + 'px';
-            // Alinha a borda direita do toast com a borda direita do botão,
-            // mas garante pelo menos 12px de margem da borda da viewport.
-            var rightOffset = Math.max(12, window.innerWidth - rect.right);
-            el.style.right = rightOffset + 'px';
+    function numDoAlvo(a) { return a.num; }
+
+    function inserirTextoComProtocolos(destino, texto) {
+        var padrao = /(\d{5}\.\d{6}\/\d{4}-\d{2}|\d{7,17})/g;
+        var msg = String(texto || '');
+        var inicio = 0, achado;
+        while ((achado = padrao.exec(msg))) {
+            destino.appendChild(document.createTextNode(msg.slice(inicio, achado.index)));
+            var numero = document.createElement('strong');
+            numero.className = 'sei-agr-num';
+            numero.textContent = achado[0];
+            destino.appendChild(numero);
+            inicio = achado.index + achado[0].length;
         }
-        // Sem rect: o CSS base (top:60px;right:16px) serve de fallback.
+        destino.appendChild(document.createTextNode(msg.slice(inicio)));
+    }
+
+    // ── Área de mensagens do painel ──────────────────────────────────────
+    // Toda a conversa da extensão acontece dentro do próprio painel: retorno
+    // da linkagem, busca/histórico da importação e as conclusões. Não há mais
+    // toast flutuante nem modal sobre a página.
+    var TITULO_PADRAO = { ok: 'Concluído', erro: 'Não foi possível', '': 'Em andamento' };
+
+    // corpo: string ou lista de linhas. tipo: 'ok' | 'erro' | '' (neutro).
+    function aviso(corpo, tipo, titulo) {
+        var caixa = document.createElement('div');
+        caixa.className = 'sei-agr-msg ' + (tipo || '');
+
+        var cabecalho = document.createElement('span');
+        cabecalho.className = 'sei-agr-msg-titulo';
+        cabecalho.textContent = titulo || TITULO_PADRAO[tipo || ''] || 'SEI AGR';
+        caixa.appendChild(cabecalho);
+
+        // Texto vindo de API entra só como nó de texto; os números viram
+        // <strong> por inserirTextoComProtocolos, nunca por innerHTML.
+        (Array.isArray(corpo) ? corpo : [corpo]).forEach(function (linha) {
+            var p = document.createElement('span');
+            p.className = 'sei-agr-msg-corpo';
+            inserirTextoComProtocolos(p, linha);
+            caixa.appendChild(p);
+        });
+
+        mostrarNaArea(caixa, tipo);
+    }
+
+    // Substitui o conteúdo da área e garante o painel aberto — mensagem que
+    // ninguém vê não é mensagem. A região viva é a área, que já existe no DOM:
+    // um elemento com aria-live criado junto com o texto não é anunciado.
+    function mostrarNaArea(no, tipo) {
+        area.setAttribute('aria-live', tipo === 'erro' ? 'assertive' : 'polite');
+        area.textContent = '';
+        area.appendChild(no);
+        abrirMenu(false);
+    }
+
+    function areaVazia() {
+        area.textContent = '';
+        var vazio = document.createElement('span');
+        vazio.className = 'sei-agr-area-vazia';
+        vazio.textContent = 'Área de mensagens';
+        area.appendChild(vazio);
+    }
+
+    // ── Estado dos botões de ação ────────────────────────────────────────
+    // A marca à esquerda do rótulo é o ponto do design; vira spinner enquanto
+    // trabalha e check quando conclui.
+    function marcar(btn, estado) {
+        var marca = btn.querySelector('.sei-agr-marca');
+        marca.className = 'sei-agr-marca sei-agr-marca-' + estado;
+        marca.innerHTML = estado === 'spin' ? SPINNER_ICONE : estado === 'ok' ? ICONE_CONFIRMADO : '';
+    }
+
+    function rotular(btn, texto) {
+        btn.querySelector('.sei-agr-rotulo').textContent = texto;
+        btn.setAttribute('aria-label', texto);
+    }
+
+    var confirmacaoTimer;
+    var linkagemEmAndamento = false;
+
+    function confirmarLinkagem(quantidade) {
+        clearTimeout(confirmacaoTimer);
+        marcar(botao, 'ok');
+        rotular(botao, quantidade + (quantidade === 1 ? ' link aplicado' : ' links aplicados'));
+        confirmacaoTimer = setTimeout(function () {
+            if (botao.disabled) return;
+            marcar(botao, 'ponto');
+            rotular(botao, 'Linkar protocolos');
+        }, 1800);
     }
 
     function ocupado(sim) {
+        if (sim) clearTimeout(confirmacaoTimer);
+        linkagemEmAndamento = sim;
         botao.disabled = sim;
-        botao.classList.toggle('sei-agr-loading', sim);
-        var spinnerEl = botao.querySelector('.sei-agr-inline-spinner');
-        if (sim && !spinnerEl) {
-            // Insere spinner ao lado do ícone, sem substituí-lo
-            var span = document.createElement('span');
-            span.className = 'sei-agr-inline-spinner';
-            span.innerHTML = SPINNER_ICONE;
-            botao.insertBefore(span, botao.querySelector('.sei-agr-rotulo'));
-        } else if (!sim && spinnerEl) {
-            spinnerEl.remove();
-        }
-        // Esconde/mostra o ícone principal
-        var iconEl = botao.querySelector('.sei-agr-icon');
-        if (iconEl) iconEl.style.display = sim ? 'none' : '';
-        botao.querySelector('.sei-agr-rotulo').textContent = sim ? 'Vinculando…' : 'Linkar protocolos';
+        if (botaoImportar) botaoImportar.disabled = sim || importacaoEmAndamento;
+        botao.setAttribute('aria-busy', String(sim));
+        marcar(botao, sim ? 'spin' : 'ponto');
+        rotular(botao, sim ? 'Vinculando…' : 'Linkar protocolos');
     }
 
     function executar() {
@@ -228,217 +297,332 @@
         ocupado(true);
         Promise.resolve()
             .then(function () { return linkarTudo(ed); })
-            .catch(function (e) {
-                console.error('[sei-agr]', e);
-                aviso('Erro: ' + e.message, 'erro');
+            .then(function (resultado) {
+                ocupado(false);
+                if (resultado && resultado.linksAplicados) confirmarLinkagem(resultado.linksAplicados);
             })
-            .then(function () { ocupado(false); });
+            .catch(function (e) {
+                ocupado(false);
+                console.error('[sei-agr]', e);
+                aviso('Não foi possível concluir a linkagem. Recarregue a página e tente novamente.', 'erro');
+            });
     }
 
     // ── CSS ────────────────────────────────────────────────────────────────
-    // Paleta local: teal é ação; amarelo deixa de competir com os botões e
-    // fica reservado para destaques do produto/estado.
-    // Especificidade alta (classe dupla) para vencer as regras do CKEditor.
-    var B = 'button.sei-agr-btn.sei-agr-btn';
+    // Identidade SEI AGR, amostrada dos logos oficiais pixel a pixel:
+    // o verde #008C59 e o ouro #F9DA2A vêm do brasão da AGR; o selo "sei!"
+    // é vazado em branco sobre o verde, com a exclamação em ouro.
+    //
+    // Todo seletor daqui é prefixado por #seiAgrMenu, e não é preciosismo: o
+    // CKEditor do SEI aplica `.ck.ck-reset_all *{background:transparent;border:0;
+    // margin:0;padding:0}` a tudo que estiver dentro da toolbar. Isso é (0,2,0)
+    // e ATROPELA qualquer seletor de classe simples — o painel perde fundo,
+    // borda e espaçamento e desmonta. O id garante (1,x,y) e vence sempre.
+    var M = '#seiAgrMenu';
+    var B = M + ' button.sei-agr-btn';
     var CSS = [
-        // ── Tokens locais ─────────────────────────────────────────────────
-        ':root{--sei-agr-accent:#0B6E8D;--sei-agr-accent-hover:#095D75;',
-        '--sei-agr-accent-link:#0B6E8D;--sei-agr-accent-soft:rgba(11,110,141,.10);',
-        '--sei-agr-ink:#17313D;--sei-agr-muted:#5A6D7C;--sei-agr-border:#C7D7DE;',
-        '--sei-agr-surface:#FFFFFF;--sei-agr-subtle:#F4F8FA;--sei-agr-focus:#0B2A3A;',
-        '--sei-agr-on-accent:#FFFFFF;--sei-agr-success:#0B6B3A;--sei-agr-danger:#B42318;',
-        '--sei-agr-overlay:rgba(13,32,41,.52);--sei-agr-shadow:rgba(13,32,41,.16)}',
-        '@media (prefers-color-scheme:dark){:root{--sei-agr-accent-link:#7BD3E4;',
-        '--sei-agr-accent-soft:rgba(123,211,228,.16);--sei-agr-ink:#F2F7F8;',
-        '--sei-agr-muted:#B4C5CC;--sei-agr-border:#3D5964;--sei-agr-surface:#14252E;',
-        '--sei-agr-subtle:#1C333D;--sei-agr-focus:#D7F3FA;--sei-agr-overlay:rgba(0,0,0,.68);',
-        '--sei-agr-shadow:rgba(0,0,0,.42);--sei-agr-success:#49D39A;--sei-agr-danger:#FF8B82}}',
+        // ── Tokens ────────────────────────────────────────────────────────
+        // #008C59 e #F9DA2A saem do brasão da AGR. O verde da marca só carrega texto branco a 4.29:1 — abaixo do
+        // mínimo — então quem tem texto em cima usa --sa-verde (#007A4E, 5.4:1)
+        // e a marca fica nos acentos sem texto. Conferido em contraste.js.
+        ':root{--sa-verde:#007A4E;--sa-verde-h:#00663F;--sa-verde-a:#005434;',
+        '--sa-verde-txt:#00754A;--sa-marca:#008C59;',
+        '--sa-amarelo:#F9DA2A;',
+        '--sa-tinta:#1C231E;--sa-texto:#39423C;--sa-mudo:#6E756E;',
+        '--sa-borda:#DCDED9;--sa-campo:#858B85;--sa-linha:#ECEEE9;--sa-sup:#FFFFFF;',
+        '--sa-suave:#EFF8F3;--sa-suave-h:#E0F1E8;--sa-suave-borda:#C9E2D4;',
+        '--sa-erro:#B3261E;--sa-erro-suave:#FDF3F2;--sa-erro-borda:#EBC9C6;',
+        '--sa-fonte:Nunito,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}',
 
-        // ── Botão principal ──────────────────────────────────────────────
-        B + '{position:relative;overflow:hidden;isolation:isolate;',
-        'display:inline-flex;align-items:center;justify-content:center;align-self:center;',
-        'gap:6px;height:30px;padding:0 10px;margin:0 4px 0 auto;',
-        'border:1px solid var(--sei-agr-accent);border-radius:6px;cursor:pointer;white-space:nowrap;',
-        'font:600 11px/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:.01em;',
-        'color:var(--sei-agr-on-accent) !important;-webkit-text-fill-color:currentColor !important;',
-        'background:var(--sei-agr-accent);',
-        'box-shadow:0 1px 2px var(--sei-agr-shadow);',
-        'transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease,',
-        'transform .16s ease;box-sizing:border-box}',
+        // ── Raiz: alinhada à direita da barra de ferramentas ──────────────
+        M + '{position:relative;display:inline-flex;align-items:center;align-self:center;',
+        'margin:0 4px 0 auto;padding:0;border:0;background:transparent;box-sizing:border-box;',
+        'font:600 13px/1.45 var(--sa-fonte);text-align:left;vertical-align:middle}',
+        M + ' *{box-sizing:border-box}',
 
-        // Os ícones usam currentColor para que o secundário possa ser escuro.
+        // ── Selo "sei!" ───────────────────────────────────────────────────
+        // Como no design: branco a 16% sobre o verde, "!" em ouro. É um selo
+        // vazado dentro do botão, não o logo do SEI reproduzido.
+        M + ' .sei-agr-selo{display:inline-flex;align-items:center;justify-content:center;',
+        'flex:none;padding:0;border:0;border-radius:6px;background:rgba(255,255,255,.16);',
+        'color:#FFF !important;-webkit-text-fill-color:currentColor !important;',
+        'font:900 10px/1 var(--sa-fonte);letter-spacing:-.02em}',
+        M + ' .sei-agr-selo i{margin-left:.1em;font-style:normal;color:var(--sa-amarelo) !important;',
+        '-webkit-text-fill-color:currentColor !important}',
+
+        // ── Gatilho na toolbar ────────────────────────────────────────────
+        // Medidas do bloco "Aplicação" do design: selo 22px, gap 8px,
+        // padding 9px à esquerda / 14px à direita, raio 9px.
+        M + ' button.sei-agr-menu-gatilho{display:inline-flex;align-items:center;gap:8px;',
+        'height:32px;min-height:32px;margin:0;padding:0 14px 0 9px;border:0;border-radius:9px;',
+        'background:var(--sa-verde);color:#FFF !important;-webkit-text-fill-color:currentColor !important;',
+        'font:800 13px/1 var(--sa-fonte);white-space:nowrap;cursor:pointer;',
+        'box-shadow:none;transition:background-color .12s ease}',
+        M + ' button.sei-agr-menu-gatilho .sei-agr-selo{width:22px;height:22px}',
+        // Cor explicita no rotulo: heranca PERDE para `.ck-reset_all *`, que
+        // casa direto no span e o pintaria com a cor de texto do editor.
+        M + ' .sei-agr-menu-nome{color:#FFF !important;-webkit-text-fill-color:currentColor !important}',
+        M + ' button.sei-agr-menu-gatilho:hover{background:var(--sa-verde-h)}',
+        M + ' button.sei-agr-menu-gatilho:active{background:var(--sa-verde-a)}',
+        M + ' button.sei-agr-menu-gatilho:focus-visible{outline:2px solid var(--sa-tinta);outline-offset:2px}',
+
+        // ── Painel ────────────────────────────────────────────────────────
+        M + ' .sei-agr-menu-acoes{display:block;position:absolute;top:calc(100% + 6px);right:0;',
+        'z-index:2147483000;width:420px;max-width:calc(100vw - 24px);margin:0;padding:0;overflow:hidden;',
+        'background:var(--sa-sup);border:1px solid var(--sa-borda);border-radius:14px;',
+        'box-shadow:none;transform-origin:top right;',
+        'font:600 13px/1.45 var(--sa-fonte);color:var(--sa-tinta);text-align:left;white-space:normal}',
+        // display explicito vence o [hidden] do agente de usuario: sem isto,
+        // esconder o painel ou a mensagem da busca nao surtiria efeito.
+        M + ' .sei-agr-menu-acoes[hidden],' + M + ' .sei-agr-msg[hidden]{display:none !important}',
+        M + '.sei-agr-menu-aberto .sei-agr-menu-acoes{animation:sei-agr-painel-entra .16s cubic-bezier(.16,1,.3,1)}',
+        '@keyframes sei-agr-painel-entra{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}',
+
+        M + ' .sei-agr-menu-cab{display:flex;align-items:center;gap:10px;margin:0;padding:14px 16px;',
+        'background:var(--sa-verde)}',
+        M + ' .sei-agr-menu-cab .sei-agr-selo{width:30px;height:30px;border-radius:8px;font-size:13px}',
+        M + ' .sei-agr-menu-cab-nome{display:flex;align-items:baseline;color:#FFF !important;',
+        '-webkit-text-fill-color:currentColor !important;font:900 16px/1 var(--sa-fonte)}',
+        M + ' .sei-agr-menu-cab-nome i{font-style:normal;color:var(--sa-amarelo) !important;',
+        'margin-left:5px;letter-spacing:.1em}',
+        M + ' .sei-agr-menu-corpo{display:flex;flex-direction:column;gap:10px;width:100%;min-width:0;',
+        'margin:0;padding:16px;max-height:calc(100vh - 160px);overflow-x:hidden;overflow-y:auto;white-space:normal}',
+
+        // ── Ações do painel ───────────────────────────────────────────────
+        B + '{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;margin:0;',
+        'padding:12px 14px;border:0;border-radius:10px;cursor:pointer;',
+        'background:var(--sa-verde);color:#FFF !important;-webkit-text-fill-color:currentColor !important;',
+        'font:800 14px/1.2 var(--sa-fonte);text-align:left;white-space:nowrap;',
+        'transition:background-color .12s ease}',
         B + ' *{color:inherit !important;-webkit-text-fill-color:currentColor !important}',
-        B + '>*{position:relative;z-index:1}',
-        B + ' svg{flex:none}',
-        // Rótulo: transição suave para esconder em telas estreitas
-        B + ' .sei-agr-rotulo{transition:opacity .16s ease;',
-        'overflow:hidden;max-width:200px;opacity:1}',
+        B + ':hover{background:var(--sa-verde-h)}',
+        B + ':active{background:var(--sa-verde-a)}',
+        B + ':focus-visible{outline:2px solid var(--sa-verde-a);outline-offset:2px}',
+        B + '[disabled]{cursor:default;background:var(--sa-verde-h)}',
+        B + '.sei-agr-btn-2[disabled]{background:var(--sa-sup);border-color:var(--sa-mudo);',
+        'color:var(--sa-mudo) !important}',
+        B + ' .sei-agr-rotulo{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}',
 
-        // ── Hover ────────────────────────────────────────────────────────
-        B + ':hover{background:var(--sei-agr-accent-hover);border-color:var(--sei-agr-accent-hover);',
-        'box-shadow:0 3px 8px var(--sei-agr-shadow);',
-        'transform:translateY(-1px)}',
+        // Secundário (Importar Resolução): contorno, mesma altura de toque.
+        B + '.sei-agr-btn-2{padding:10px 12px;border:2px solid var(--sa-verde-txt);',
+        'background:var(--sa-sup);color:var(--sa-verde-txt) !important}',
+        B + '.sei-agr-btn-2:hover{background:var(--sa-suave)}',
+        B + '.sei-agr-btn-2:active{background:var(--sa-suave-h)}',
+        B + '.sei-agr-btn-2:focus-visible{outline:2px solid var(--sa-verde-txt);outline-offset:2px}',
 
-        // ── Active ───────────────────────────────────────────────────────
-        B + ':active{transform:translateY(0) scale(.97);',
-        'box-shadow:0 1px 2px var(--sei-agr-shadow);',
-        'transition-duration:.08s}',
+        // Marca: ponto do design, spinner enquanto trabalha, check ao concluir.
+        B + ' .sei-agr-marca{flex:none;width:6px;height:6px;padding:0;border:0;border-radius:3px;',
+        'background:var(--sa-amarelo)}',
+        B + '.sei-agr-btn-2 .sei-agr-marca{background:var(--sa-marca)}',
+        B + ' .sei-agr-marca-spin,' + B + ' .sei-agr-marca-ok{width:16px;height:16px;border-radius:0;',
+        'background:transparent;display:inline-flex;align-items:center;justify-content:center}',
+        B + ' .sei-agr-marca svg{flex:none;display:block}',
+        M + ' .sei-agr-icone-confirmacao path{stroke-dasharray:18;stroke-dashoffset:18;',
+        'animation:sei-agr-traco .32s cubic-bezier(.16,1,.3,1) .06s forwards}',
+        M + ' .sei-agr-spinner{animation:sei-agr-spin .7s linear infinite;transform-origin:center}',
+        '@keyframes sei-agr-spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}',
+        '@keyframes sei-agr-traco{to{stroke-dashoffset:0}}',
 
-        // ── Focus ────────────────────────────────────────────────────────
-        B + ':focus-visible{outline:2px solid var(--sei-agr-focus);outline-offset:2px;',
-        'box-shadow:0 0 0 4px var(--sei-agr-surface)}',
+        // ── Área de mensagens / importação ────────────────────────────────
+        M + ' .sei-agr-area{display:flex;flex-direction:column;gap:8px;width:100%;min-width:0;min-height:120px;',
+        'margin:4px 0 0;padding:12px 0 0;overflow-x:hidden;border-top:1px solid var(--sa-linha);white-space:normal}',
+        M + ' .sei-agr-area-vazia{font:700 12px/1.4 var(--sa-fonte);color:var(--sa-mudo)}',
 
-        // ── Loading ──────────────────────────────────────────────────────
-        B + '[disabled]{cursor:default;background:var(--sei-agr-accent-hover);',
-        'box-shadow:none;transform:none;border-color:var(--sei-agr-accent-hover);opacity:.78}',
-        B + '.sei-agr-loading{background:var(--sei-agr-accent-hover)}',
-        '.sei-agr-inline-spinner{display:inline-flex;align-items:center}',
+        M + ' .sei-agr-msg{display:flex;flex-direction:column;gap:4px;width:100%;min-width:0;margin:0;padding:12px 14px;',
+        'border:1px solid var(--sa-suave-borda);border-radius:10px;background:var(--sa-suave);',
+        'animation:sei-agr-msg-entra .18s ease-out}',
+        '@keyframes sei-agr-msg-entra{from{opacity:0}to{opacity:1}}',
+        M + ' .sei-agr-msg-titulo{font:800 11px/1.2 var(--sa-fonte);letter-spacing:.12em;',
+        'text-transform:uppercase;color:var(--sa-verde-txt) !important}',
+        M + ' .sei-agr-msg-corpo{min-width:0;font:600 13px/1.45 var(--sa-fonte);color:var(--sa-texto) !important;',
+        'white-space:normal;overflow-wrap:anywhere;word-break:normal}',
+        M + ' .sei-agr-msg.erro{background:var(--sa-erro-suave);border-color:var(--sa-erro-borda)}',
+        M + ' .sei-agr-msg.erro .sei-agr-msg-titulo{color:var(--sa-erro) !important}',
+        M + ' .sei-agr-msg a{color:var(--sa-verde) !important;font-weight:800;text-decoration:underline}',
+        M + ' .sei-agr-num{font-weight:800;font-variant-numeric:tabular-nums;color:var(--sa-tinta) !important}',
 
-        // ── Keyframes ────────────────────────────────────────────────────
-        '@keyframes sei-agr-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}',
-        '.sei-agr-spinner{animation:sei-agr-spin .7s linear infinite;transform-origin:center}',
+        // Busca e histórico da importação vivem na mesma área.
+        M + ' .sei-agr-busca{display:flex;flex-direction:column;gap:6px;width:100%;min-width:0;margin:0;padding:0;white-space:normal}',
+        M + ' .sei-agr-busca input{width:100%;height:38px;margin:0;padding:0 12px;',
+        'border:1px solid var(--sa-campo);border-radius:10px;background:var(--sa-sup);',
+        'font:700 13px/1 var(--sa-fonte);color:var(--sa-tinta) !important;',
+        '-webkit-text-fill-color:currentColor !important;font-variant-numeric:tabular-nums}',
+        M + ' .sei-agr-busca input:focus{outline:2px solid var(--sa-verde-txt);outline-offset:1px;',
+        'border-color:var(--sa-verde-txt)}',
+        M + ' .sei-agr-busca input::placeholder{color:var(--sa-mudo);opacity:1;font-weight:600}',
+        M + ' .sei-agr-busca-ajuda{min-width:0;margin:0;padding:0;font:600 11px/1.4 var(--sa-fonte);',
+        'color:var(--sa-mudo);white-space:normal;overflow-wrap:anywhere}',
+        M + ' .sei-agr-lista{display:flex;flex-direction:column;gap:2px;width:100%;min-width:0;max-height:200px;',
+        'overflow-x:hidden;overflow-y:auto;margin:0;padding:0;list-style:none;white-space:normal}',
+        M + ' .sei-agr-lista li{margin:0;padding:0;list-style:none}',
+        M + ' .sei-agr-lista li::marker{content:""}',
+        M + ' button.sei-agr-item{display:block;width:100%;min-width:0;max-width:100%;min-height:44px;margin:0;padding:8px 10px;',
+        'border:0;border-radius:8px;background:transparent;text-align:left;cursor:pointer;',
+        'font:600 13px/1.35 var(--sa-fonte);color:var(--sa-tinta) !important;',
+        '-webkit-text-fill-color:currentColor !important}',
+        M + ' button.sei-agr-item:hover{background:var(--sa-suave)}',
+        M + ' button.sei-agr-item:focus-visible{background:var(--sa-suave);',
+        'outline:2px solid var(--sa-verde-txt);outline-offset:-2px}',
+        // Sem isto o `b` e o `span` recebem a cor do editor direto do reset.
+        M + ' button.sei-agr-item *{color:inherit !important;-webkit-text-fill-color:currentColor !important}',
+        M + ' button.sei-agr-item b{display:block;max-width:100%;font:800 13px/1.3 var(--sa-fonte);',
+        'font-variant-numeric:tabular-nums}',
+        M + ' button.sei-agr-item span{display:block;max-width:100%;margin-top:2px;font:600 11.5px/1.3 var(--sa-fonte);',
+        'color:var(--sa-mudo) !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
 
-        // ── Fallback (fora da toolbar) ───────────────────────────────────
-        B + '.solto{position:fixed;bottom:24px;right:24px;z-index:2147483000;margin:0;',
-        'padding:7px 12px;font-size:13px;border-radius:8px;',
-        'box-shadow:0 6px 18px var(--sei-agr-shadow)}',
+        // ── Fallback: toolbar não encontrada ──────────────────────────────
+        '#seiAgrAcoesFlutuantes{position:fixed;z-index:2147483000;',
+        'right:max(16px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom))}',
+        M + '.sei-agr-menu-solto{margin:0}',
+        M + '.sei-agr-menu-solto .sei-agr-menu-acoes{top:auto;bottom:calc(100% + 6px);',
+        'transform-origin:bottom right}',
 
-        // ── Toast ────────────────────────────────────────────────────────
-        'div.sei-agr-toast{position:fixed;top:60px;right:16px;z-index:2147483000;',
-        'width:auto;max-width:min(380px,calc(100vw - 32px));',
-        'padding:12px 38px 12px 14px;border-radius:10px;',
-        'background:var(--sei-agr-surface);',
-        'color:var(--sei-agr-ink);border:1px solid var(--sei-agr-border);',
-        'font:500 13px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;',
-        'box-shadow:0 8px 24px var(--sei-agr-shadow);',
-        'display:flex;align-items:flex-start;gap:10px;overflow:hidden;',
-        'box-sizing:border-box;',
-        'animation:sei-agr-toast-in .35s cubic-bezier(.16,1,.3,1)}',
-
-        // Toast saindo
-        'div.sei-agr-toast.saindo{animation:sei-agr-toast-out .3s cubic-bezier(.4,0,.6,1) forwards}',
-
-        // Ícone de status do toast
-        '.sei-agr-toast-icon{flex:none;margin-top:1px;color:var(--sei-agr-accent-link)}',
-        '.sei-agr-toast.ok .sei-agr-toast-icon{color:var(--sei-agr-success)}',
-        '.sei-agr-toast.erro .sei-agr-toast-icon{color:var(--sei-agr-danger)}',
-
-        // Texto do toast
-        '.sei-agr-toast-msg{flex:1;line-height:1.45;word-break:break-word;min-width:0}',
-        // Números de protocolo destacados
-        '.sei-agr-num{font-weight:700;font-variant-numeric:tabular-nums;',
-        'color:var(--sei-agr-ink) !important;letter-spacing:.02em}',
-
-        // Botão fechar do toast
-        '.sei-agr-toast-close{position:absolute;top:8px;right:8px;',
-        'width:28px;height:28px;border:0;border-radius:6px;cursor:pointer;',
-        'background:transparent;color:var(--sei-agr-muted) !important;font:500 16px/1 sans-serif;',
-        'display:flex;align-items:center;justify-content:center;',
-        'transition:background-color .14s ease,color .14s ease}',
-        '.sei-agr-toast-close:hover{background:var(--sei-agr-accent-soft);color:var(--sei-agr-ink) !important}',
-
-        // Toast keyframes
-        '@keyframes sei-agr-toast-in{from{opacity:0;transform:translateY(-6px)}',
-        'to{opacity:1;transform:translateY(0)}}',
-        '@keyframes sei-agr-toast-out{from{opacity:1;transform:translateX(0)}',
-        'to{opacity:0;transform:translateX(20px)}}',
-
-        // ── Responsivo: tela ≤ 600px — botão ícone-only ──────────────────
+        // ── Telas estreitas ───────────────────────────────────────────────
         '@media (max-width:600px){',
-        B + '{gap:0;padding:5px 8px;border-radius:8px}',
-        B + ' .sei-agr-rotulo{max-width:0;opacity:0;padding:0;margin:0;font-size:0}',
-        B + '.solto{bottom:16px;right:16px;padding:8px;border-radius:50%}',
+        M + ' .sei-agr-menu-acoes{width:min(420px,calc(100vw - 24px))}',
+        M + ' button.sei-agr-menu-gatilho{position:relative;justify-content:center;width:44px;height:44px;',
+        'min-height:44px;padding:0;background:transparent}',
+        M + ' button.sei-agr-menu-gatilho:hover,' + M + ' button.sei-agr-menu-gatilho:active{background:transparent}',
+        M + ' button.sei-agr-menu-gatilho::before{content:"";position:absolute;inset:6px;z-index:0;',
+        'border-radius:9px;background:var(--sa-verde)}',
+        M + ' button.sei-agr-menu-gatilho:hover::before{background:var(--sa-verde-h)}',
+        M + ' button.sei-agr-menu-gatilho:active::before{background:var(--sa-verde-a)}',
+        M + ' button.sei-agr-menu-gatilho .sei-agr-selo{position:relative;z-index:1}',
+        M + ' .sei-agr-menu-nome{display:none}',
+        M + ' .sei-agr-busca input{height:44px;font-size:16px}',
         '}',
 
-        // ── Responsivo: tela ≤ 480px — toast compacto ────────────────────
-        '@media (max-width:480px){',
-        'div.sei-agr-toast{right:8px;left:8px;max-width:none;',
-        'font-size:12.5px;padding:10px 34px 10px 12px;border-radius:8px}',
-        '.sei-agr-toast-icon{width:16px;height:16px}',
-        '.sei-agr-toast-close{top:6px;right:6px;width:28px;height:28px;font-size:14px}',
-        '}',
-
-        // ── Botão secundário (Importar Resolução): outline ───────────────
-        B + '.sei-agr-btn-2{margin-left:0;',
-        'background:transparent;color:var(--sei-agr-accent-link) !important;',
-        'border-color:var(--sei-agr-accent-link);box-shadow:none}',
-        B + '.sei-agr-btn-2:hover{background:var(--sei-agr-accent-soft);',
-        'color:var(--sei-agr-accent-link) !important;border-color:var(--sei-agr-accent-link);',
-        'box-shadow:none}',
-
-        // ── Modal de importação ──────────────────────────────────────────
-        '.sei-agr-overlay{position:fixed;inset:0;z-index:2147483100;',
-        'background:var(--sei-agr-overlay);',
-        'display:flex;align-items:flex-start;justify-content:center;padding:8vh 16px 16px;',
-        'animation:sei-agr-toast-in .2s ease}',
-        '.sei-agr-modal{width:100%;max-width:480px;max-height:76vh;display:flex;flex-direction:column;',
-        'background:var(--sei-agr-surface);border-radius:10px;overflow:hidden;',
-        'box-shadow:0 20px 48px var(--sei-agr-shadow);',
-        'font:400 13px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--sei-agr-ink)}',
-        '.sei-agr-modal h2{margin:0;padding:14px 44px 14px 16px;font:600 14px/1.3 inherit;color:var(--sei-agr-ink);',
-        'border-bottom:1px solid var(--sei-agr-border);background:var(--sei-agr-subtle)}',
-        '.sei-agr-modal-x{position:absolute;top:10px;right:10px;width:26px;height:26px;border:0;',
-        'border-radius:7px;background:transparent;color:var(--sei-agr-muted);font:500 19px/1 sans-serif;cursor:pointer;',
-        'display:flex;align-items:center;justify-content:center}',
-        '.sei-agr-modal-x:hover{background:var(--sei-agr-accent-soft);color:var(--sei-agr-ink)}',
-        '.sei-agr-busca{display:flex;gap:6px;padding:12px 16px}',
-        '.sei-agr-busca input{flex:1;min-width:0;height:32px;padding:0 10px;border-radius:7px;',
-        'border:1px solid var(--sei-agr-border);background:var(--sei-agr-surface);',
-        'font:400 13px/1 inherit;color:var(--sei-agr-ink);',
-        'font-variant-numeric:tabular-nums;box-sizing:border-box}',
-        '.sei-agr-busca input:focus{outline:2px solid var(--sei-agr-focus);outline-offset:1px;',
-        'border-color:var(--sei-agr-accent-link)}',
-        '.sei-agr-lista{flex:1;overflow-y:auto;padding:0 8px 8px;margin:0;list-style:none}',
-        '.sei-agr-lista li{margin:0 0 3px}',
-        '.sei-agr-item{display:block;width:100%;text-align:left;border:0;background:transparent;',
-        'padding:9px 10px;border-radius:8px;cursor:pointer;font:400 13px/1.35 inherit;color:var(--sei-agr-ink)}',
-        '.sei-agr-item:hover,.sei-agr-item:focus-visible{background:var(--sei-agr-accent-soft);outline:none}',
-        '.sei-agr-item b{font-weight:600;font-variant-numeric:tabular-nums}',
-        '.sei-agr-item span{display:block;color:var(--sei-agr-muted);font-size:11.5px;margin-top:2px;',
-        'white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-        '.sei-agr-msg{padding:14px 16px;color:var(--sei-agr-muted);text-align:center}',
-        '.sei-agr-msg a{color:var(--sei-agr-accent-link);font-weight:600}',
-        '.sei-agr-modal h2{position:relative}',
-
-        // ── Reduced motion ───────────────────────────────────────────────
         '@media (prefers-reduced-motion:reduce){',
-        B + ',.sei-agr-toast,.sei-agr-spinner,' + B + '.sei-agr-loading,.sei-agr-overlay',
-        '{animation:none !important;transition:none !important}',
-        B + ':active{transform:none}}',
+        M + ' .sei-agr-menu-acoes,' + M + ' .sei-agr-msg,' + M + ' .sei-agr-spinner,',
+        M + ' .sei-agr-icone-confirmacao path,' + B + ',' + M + ' button.sei-agr-menu-gatilho',
+        '{animation:none !important;transition:none !important}}',
     ].join('');
     var estilo = document.createElement('style');
+    estilo.id = 'seiAgrEstilos';
     estilo.textContent = CSS;
     document.head.appendChild(estilo);
 
-    // ── Ícone principal: corrente/elo moderno ─────────────────────────────
-    var ICONE = '<svg class="sei-agr-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
-        ' stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-        '<path d="M15 7h3a5 5 0 0 1 0 10h-3"/>' +
-        '<path d="M9 17H6a5 5 0 0 1 0-10h3"/>' +
-        '<line x1="8" y1="12" x2="16" y2="12"/></svg>';
+    // Confirma a escrita dos vínculos no lugar da marca do botão.
+    var ICONE_CONFIRMADO = '<svg class="sei-agr-icone-confirmacao" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
+        ' stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path d="M5.5 12.5l4.1 4.1 8.9-9"/></svg>';
 
     // ── Spinner circular fluido ──────────────────────────────────────────
     var SPINNER_ICONE = '<svg class="sei-agr-spinner" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
-        '<circle cx="12" cy="12" r="9.5" stroke="rgba(255,255,255,0.2)" stroke-width="2.5"/>' +
-        '<path d="M21.5 12a9.5 9.5 0 0 0-9.5-9.5" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>' +
+        '<circle cx="12" cy="12" r="9.5" stroke="currentColor" stroke-opacity=".22" stroke-width="2.5"/>' +
+        '<path d="M21.5 12a9.5 9.5 0 0 0-9.5-9.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>' +
         '</svg>';
 
-    var botao = document.createElement('button');
-    botao.type = 'button';
-    botao.className = 'sei-agr-btn';
-    botao.innerHTML = ICONE + '<span class="sei-agr-rotulo">Linkar protocolos</span>';
-    botao.title = 'Vincula números de processo e documento como links do SEI · Ctrl+Shift+K';
+    var SELO = '<span class="sei-agr-selo" aria-hidden="true">sei<i>!</i></span>';
+
+    function criarAcao(classe, rotulo, titulo) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'sei-agr-btn ' + classe;
+        b.innerHTML = '<span class="sei-agr-marca sei-agr-marca-ponto" aria-hidden="true"></span>' +
+                      '<span class="sei-agr-rotulo"></span>';
+        b.querySelector('.sei-agr-rotulo').textContent = rotulo;
+        b.setAttribute('aria-label', rotulo);
+        b.title = titulo;
+        return b;
+    }
+
+    var botao = criarAcao('sei-agr-btn-1', 'Linkar protocolos',
+        'Vincula números de processo e documento como links do SEI · Ctrl+Shift+K');
+    // O painel continua aberto: é nele que a mensagem de retorno aparece.
     botao.onclick = executar;
 
-    // A toolbar do CKEditor 5 e flex: `margin-left:auto` joga o botao para o espaco
-    // livre a direita. Se ela nao aparecer, o botao volta a flutuar no canto.
+    var botaoMenu = document.createElement('button');
+    botaoMenu.type = 'button';
+    botaoMenu.className = 'sei-agr-menu-gatilho';
+    botaoMenu.innerHTML = SELO + '<span class="sei-agr-menu-nome">SEI AGR</span>';
+    botaoMenu.setAttribute('aria-expanded', 'false');
+    botaoMenu.setAttribute('aria-controls', 'seiAgrMenuAcoes');
+    botaoMenu.setAttribute('aria-label', 'Ações SEI AGR');
+    botaoMenu.title = 'Ações SEI AGR';
+
+    var menu = document.createElement('div');
+    menu.id = 'seiAgrMenu';
+    menu.className = 'sei-agr-menu';
+
+    var menuAcoes = document.createElement('div');
+    menuAcoes.id = 'seiAgrMenuAcoes';
+    menuAcoes.className = 'sei-agr-menu-acoes';
+    menuAcoes.setAttribute('role', 'region');
+    menuAcoes.setAttribute('aria-label', 'SEI AGR');
+    menuAcoes.hidden = true;
+    menuAcoes.innerHTML =
+        '<div class="sei-agr-menu-cab">' + SELO +
+        '<span class="sei-agr-menu-cab-nome">SEI<i>AGR</i></span></div>' +
+        '<div class="sei-agr-menu-corpo"></div>';
+
+    var corpoMenu = menuAcoes.querySelector('.sei-agr-menu-corpo');
+    // Área única: mensagens da linkagem, busca/histórico da importação e as
+    // conclusões, todas no mesmo lugar do painel.
+    var area = document.createElement('div');
+    area.className = 'sei-agr-area';
+    // Sem role="status": ele implica aria-atomic e faria o leitor reler a busca
+    // inteira a cada tecla. Só aria-live, anunciando o que de fato mudou.
+    area.setAttribute('aria-live', 'polite');
+
+    menu.appendChild(botaoMenu);
+    menu.appendChild(menuAcoes);
+
+    function abrirMenu(focarPrimeiro) {
+        menuAcoes.hidden = false;
+        menu.classList.add('sei-agr-menu-aberto');
+        botaoMenu.setAttribute('aria-expanded', 'true');
+        if (focarPrimeiro) botao.focus();
+    }
+
+    function fecharMenu(devolverFoco) {
+        menu.classList.remove('sei-agr-menu-aberto');
+        menuAcoes.hidden = true;
+        botaoMenu.setAttribute('aria-expanded', 'false');
+        if (devolverFoco) botaoMenu.focus();
+    }
+
+    botaoMenu.onclick = function () {
+        if (menuAcoes.hidden) abrirMenu(false);
+        else fecharMenu(false);
+    };
+    botaoMenu.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            abrirMenu(true);
+        } else if (e.key === 'Escape') {
+            fecharMenu(false);
+        }
+    });
+    menuAcoes.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        e.preventDefault();
+        e.stopPropagation();
+        fecharMenu(true);
+    });
+    document.addEventListener('pointerdown', function (e) {
+        if (!menuAcoes.hidden && !menu.contains(e.target)) fecharMenu(false);
+    }, true);
+
+    function painelFlutuante() {
+        var painel = document.getElementById('seiAgrAcoesFlutuantes');
+        if (painel) return painel;
+        painel = document.createElement('div');
+        painel.id = 'seiAgrAcoesFlutuantes';
+        painel.setAttribute('role', 'group');
+        painel.setAttribute('aria-label', 'Ações da extensão SEI AGR');
+        document.body.appendChild(painel);
+        return painel;
+    }
+
+    // A extensão entra como um único comando do editor; as ações vivem no menu.
     var tentativas = 0;
     (function encaixar() {
         var toolbar = document.querySelector('.ck-toolbar__items') || document.querySelector('.ck-toolbar');
-        if (toolbar) return toolbar.appendChild(botao);
+        if (toolbar) return toolbar.appendChild(menu);
         if (++tentativas > 40) { // ~20s
-            botao.classList.add('solto');
-            return document.body.appendChild(botao);
+            menu.classList.add('sei-agr-menu-solto');
+            return painelFlutuante().appendChild(menu);
         }
         setTimeout(encaixar, 500);
     })();
@@ -603,7 +787,19 @@
             .map(function (it) { return it.nome; });
     }
 
+    var importacaoEmAndamento = false;
+
+    function ocupadoImportacao(sim) {
+        importacaoEmAndamento = sim;
+        botaoImportar.disabled = sim;
+        botao.disabled = sim || linkagemEmAndamento;
+        botaoImportar.setAttribute('aria-busy', String(sim));
+        marcar(botaoImportar, sim ? 'spin' : 'ponto');
+        rotular(botaoImportar, sim ? 'Importando…' : 'Importar Resolução');
+    }
+
     function importar(numero) {
+        if (importacaoEmAndamento) return;
         var ed = editorAtual();
         if (!ed) return aviso('Editor do SEI não encontrado nesta página.', 'erro');
 
@@ -624,7 +820,8 @@
             return;
         }
 
-        aviso('Buscando a minuta do processo ' + numero + '…');
+        ocupadoImportacao(true);
+        aviso('Buscando a minuta do processo ' + numero + '…', '', 'Importar Resolução');
         return api('resolucao', numero).then(function (r) {
             if (!r.ok) return avisarErroApi(r);
 
@@ -648,61 +845,107 @@
             if (falhou.length === itens.length) {
                 return aviso('O editor do SEI não aceitou nenhum dos blocos.', 'erro');
             }
-            var msg = (itens.length - falhou.length) + ' de ' + itens.length +
-                      ' blocos preenchidos. Revise e use "Linkar protocolos" para os números. ' +
-                      'Ctrl+Z desfaz a importação inteira.';
-            if (falhou.length) msg = 'Atenção: ' + falhou.join(', ') + ' não colou. ' + msg;
-            aviso(msg, falhou.length ? 'erro' : 'ok');
+            var linhas = [
+                'Processo ' + numero + ': ' + (itens.length - falhou.length) + ' de ' + itens.length +
+                ' blocos preenchidos.',
+                'Revise e use "Linkar protocolos" para os números. Ctrl+Z desfaz a importação inteira.',
+            ];
+            if (falhou.length) linhas.unshift('Não colou: ' + falhou.join(', ') + '.');
+            aviso(linhas, falhou.length ? 'erro' : 'ok', 'Importar Resolução');
+        }).catch(function (e) {
+            console.error('[sei-agr] importação falhou', e);
+            aviso('Não foi possível importar a minuta. Tente novamente.', 'erro');
+        }).then(function (resultado) {
+            ocupadoImportacao(false);
+            return resultado;
         });
     }
 
-    // O processo deste documento, para o modal já vir preenchido.
+    // O processo deste documento, para a busca já vir preenchida.
     // A extração é de detectar.js (pura, testada em test-deteccao.js).
+    var processoDaPaginaCache;
+    var processoDaPaginaCalculado = false;
     function processoDaPagina() {
-        try { return processoDeReferencia(document.body.innerText || ''); }
-        catch (e) { return ''; }
+        if (processoDaPaginaCalculado) return processoDaPaginaCache;
+        processoDaPaginaCalculado = true;
+        try { processoDaPaginaCache = processoDeReferencia(document.body.innerText || ''); }
+        catch (e) { processoDaPaginaCache = ''; }
+        return processoDaPaginaCache;
     }
 
-    // ── Modal ────────────────────────────────────────────────────────────
-    function fecharModal() {
-        var o = document.getElementById('seiAgrOverlay');
-        if (o) o.remove();
-        document.removeEventListener('keydown', escFecha, true);
-    }
-    function escFecha(e) {
-        if (e.key === 'Escape') { e.stopPropagation(); fecharModal(); }
-    }
+    // ── Vista de importação, dentro da própria área do painel ────────────
+    // Busca, histórico e conclusão no mesmo lugar das mensagens de linkagem:
+    // sem overlay, sem foco preso, sem segunda janela sobre o editor.
+    var buscaTimer;
+    var consultaAtual = 0;
 
-    function abrirModal() {
-        fecharModal();
-        var overlay = document.createElement('div');
-        overlay.id = 'seiAgrOverlay';
-        overlay.className = 'sei-agr-overlay';
-        overlay.innerHTML =
-            '<div class="sei-agr-modal" role="dialog" aria-modal="true" aria-label="Importar resolução gerada">' +
-            '<h2>Importar Resolução Gerada' +
-            '<button type="button" class="sei-agr-modal-x" aria-label="Fechar">&times;</button></h2>' +
-            '<div class="sei-agr-busca">' +
-            '<input type="text" inputmode="numeric" placeholder="Número do processo" aria-label="Número do processo">' +
-            '</div><ul class="sei-agr-lista"></ul>' +
-            '<div class="sei-agr-msg">Carregando os processos recentes…</div></div>';
+    function vistaImportar() {
+        clearTimeout(buscaTimer);
+        area.textContent = '';
 
-        overlay.onclick = function (e) { if (e.target === overlay) fecharModal(); };
-        overlay.querySelector('.sei-agr-modal-x').onclick = fecharModal;
-        document.addEventListener('keydown', escFecha, true);
-        document.body.appendChild(overlay);
+        var busca = document.createElement('div');
+        busca.className = 'sei-agr-busca';
+        busca.innerHTML =
+            '<input type="text" inputmode="numeric" autocomplete="off" spellcheck="false" maxlength="32" ' +
+            'placeholder="Número do processo" aria-label="Número do processo" aria-describedby="seiAgrBuscaAjuda">' +
+            '<p class="sei-agr-busca-ajuda" id="seiAgrBuscaAjuda">Digite para buscar ou informe o número ' +
+            'completo e pressione Enter.</p>';
 
-        var input = overlay.querySelector('input');
-        var lista = overlay.querySelector('.sei-agr-lista');
-        var msg = overlay.querySelector('.sei-agr-msg');
+        var lista = document.createElement('ul');
+        lista.className = 'sei-agr-lista';
 
-        function dizer(html) { msg.innerHTML = html; msg.style.display = ''; }
-        function calar() { msg.style.display = 'none'; }
+        var msg = document.createElement('div');
+        msg.className = 'sei-agr-msg';
+
+        area.appendChild(busca);
+        area.appendChild(lista);
+        area.appendChild(msg);
+
+        var input = busca.querySelector('input');
+
+        // Mesma caixa de mensagem do resto do painel; devolve o nó de corpo
+        // para quem precisar acrescentar um link.
+        function dizer(texto, tipo) {
+            msg.className = 'sei-agr-msg ' + (tipo || '');
+            area.setAttribute('aria-live', tipo === 'erro' ? 'assertive' : 'polite');
+            msg.textContent = '';
+            var titulo = document.createElement('span');
+            titulo.className = 'sei-agr-msg-titulo';
+            titulo.textContent = 'Importar Resolução';
+            var corpo = document.createElement('span');
+            corpo.className = 'sei-agr-msg-corpo';
+            corpo.textContent = String(texto || '');
+            msg.appendChild(titulo);
+            msg.appendChild(corpo);
+            msg.hidden = false;
+            return corpo;
+        }
+
+        function dizerSemSessao(loginUrl) {
+            var corpo = dizer('Sem sessão no Gestão de Autos IA. ', 'erro');
+            var url;
+            try { url = new URL(loginUrl, location.href); } catch (e) { url = null; }
+            if (url && (url.protocol === 'https:' ||
+                (url.protocol === 'http:' && /^(localhost|127\.0\.0\.1)$/i.test(url.hostname)))) {
+                var link = document.createElement('a');
+                link.href = url.href;
+                link.target = '_blank';
+                link.rel = 'noopener';
+                link.textContent = 'Entrar no sistema';
+                corpo.appendChild(link);
+                corpo.appendChild(document.createTextNode(', depois tente de novo.'));
+            } else {
+                corpo.appendChild(document.createTextNode('Entre no sistema e tente de novo.'));
+            }
+        }
+
+        function calar() { msg.hidden = true; }
 
         function render(itens) {
             lista.textContent = '';
             if (!itens.length) return dizer('Nenhum processo encontrado.');
             calar();
+            var fragmento = document.createDocumentFragment();
             itens.forEach(function (it) {
                 var d = it.data || {};
                 var num = d.processo || String(it.id);
@@ -719,36 +962,43 @@
                     .filter(Boolean).join(' · ');
                 b.appendChild(forte);
                 b.appendChild(sub);
-                b.onclick = function () { fecharModal(); importar(num); };
+                b.onclick = function () { importar(num); };
                 li.appendChild(b);
-                lista.appendChild(li);
+                fragmento.appendChild(li);
             });
+            lista.appendChild(fragmento);
         }
 
-        function carregar(acao, arg) {
+        function carregar(acaoApi, arg) {
+            var consulta = ++consultaAtual;
             lista.textContent = '';
             dizer('Buscando…');
-            api(acao, arg).then(function (r) {
+            api(acaoApi, arg).then(function (r) {
+                // A área pode ter virado mensagem de conclusão no meio da
+                // consulta: só escreve se esta vista ainda estiver em tela.
+                if (consulta !== consultaAtual || !area.contains(lista)) return;
                 if (!r.ok) {
-                    if (r.semSessao) {
-                        return dizer('Sem sessão no Gestão de Autos IA.<br><a href="' + r.loginUrl +
-                                     '" target="_blank" rel="noopener">Entrar no sistema</a>, ' +
-                                     'depois reabra esta janela.');
-                    }
-                    return dizer(r.erro || 'Falha na consulta.');
+                    if (r.semSessao) return dizerSemSessao(r.loginUrl);
+                    return dizer(r.erro || 'Falha na consulta.', 'erro');
                 }
                 render(Array.isArray(r.dados) ? r.dados : []);
+            }).catch(function () {
+                if (consulta === consultaAtual && area.contains(lista)) {
+                    dizer('Não foi possível concluir a consulta. Tente novamente.', 'erro');
+                }
             });
         }
 
         // Enter com um número de processo completo importa direto, sem lista:
         // é o caminho de quem já sabe o número.
-        var buscaTimer;
         input.addEventListener('keydown', function (e) {
             if (e.key !== 'Enter') return;
             e.preventDefault();
             var v = input.value.replace(/\D/g, '');
-            if (v.length >= 15) { fecharModal(); importar(v); }
+            if (v.length < 15) {
+                return dizer('Informe um número de processo com pelo menos 15 dígitos.', 'erro');
+            }
+            importar(v);
         });
         input.addEventListener('input', function () {
             clearTimeout(buscaTimer);
@@ -766,32 +1016,18 @@
         carregar('recentes', '');
     }
 
-    // ── Botao ────────────────────────────────────────────────────────────
-    var ICONE_IMPORTAR = '<svg class="sei-agr-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
-        ' stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-        '<path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>';
+    // ── Montagem do painel ───────────────────────────────────────────────
+    var botaoImportar = criarAcao('sei-agr-btn-2', 'Importar Resolução',
+        'Cola a minuta gerada pelo Gestão de Autos IA nos blocos da Resolução');
+    botaoImportar.onclick = function () {
+        abrirMenu(false);
+        vistaImportar();
+    };
 
-    var botaoImportar = document.createElement('button');
-    botaoImportar.type = 'button';
-    botaoImportar.className = 'sei-agr-btn sei-agr-btn-2';
-    botaoImportar.innerHTML = ICONE_IMPORTAR + '<span class="sei-agr-rotulo">Importar Resolução</span>';
-    botaoImportar.title = 'Cola a minuta gerada pelo Gestão de Autos IA nos blocos da Resolução';
-    botaoImportar.onclick = abrirModal;
+    corpoMenu.appendChild(botao);
+    corpoMenu.appendChild(botaoImportar);
+    corpoMenu.appendChild(area);
+    areaVazia();
 
-    // Entra ao lado do primeiro botao. `botao` ja carrega o margin-left:auto
-    // que empurra a dupla para a direita da toolbar.
-    var tentativas2 = 0;
-    (function encaixar2() {
-        if (botao.parentNode) {
-            return botao.parentNode.insertBefore(botaoImportar, botao.nextSibling);
-        }
-        if (++tentativas2 > 45) { // ~22s, um pouco depois do primeiro botao desistir
-            botaoImportar.classList.add('solto');
-            botaoImportar.style.right = '210px';
-            return document.body.appendChild(botaoImportar);
-        }
-        setTimeout(encaixar2, 500);
-    })();
-
-    console.log('[sei-agr] carregado - Ctrl+Shift+K ou botoes na toolbar');
+    console.log('[sei-agr] carregado - Ctrl+Shift+K ou botão SEI AGR na toolbar');
 })();

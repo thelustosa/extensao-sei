@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="25" fill="#007A4E"/>
+  <text x="15" y="74" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="57" font-weight="800" letter-spacing="-3">sei</text>
+  <text x="95" y="74" fill="#F9DA2A" font-family="Arial, Helvetica, sans-serif" font-size="62" font-weight="900">!</text>
+  <text x="64" y="99" fill="#F9DA2A" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="900" letter-spacing="6" text-anchor="middle">AGR</text>
+</svg>

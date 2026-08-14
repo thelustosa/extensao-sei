@@ -9,8 +9,10 @@ Contribua: Sugestões, melhorias, dicas e feedbacks são muito bem-vindos!
 
 ## Linkar protocolos
 
-Com o documento aberto no editor: **Ctrl+Shift+K** ou o botão *"Linkar protocolos"*, à
-direita da barra de ferramentas. Um único Ctrl+Z desfaz a operação inteira.
+Com o documento aberto no editor: **Ctrl+Shift+K** ou o botão *"Linkar protocolos"*, no
+painel **SEI AGR** à direita da barra de ferramentas. A área de mensagens do painel
+presta contas do resultado: quantos números foram tentados, quais viraram link e quais
+não têm correspondência no SEI. Um único Ctrl+Z desfaz a operação inteira.
 
 Exemplo — no texto abaixo, só `80773781` e `203600005004296` viram link:
 
@@ -51,10 +53,11 @@ Detalhes que custaram caro e não são óbvios:
 
 ## Importar Resolução Gerada
 
-Botão *"Importar Resolução"*, ao lado do primeiro. Abre um modal que lista os
-processos recentes do [Gestão de Autos IA](https://github.com/thelustosa/gestao-de-autos-ia)
-e aceita a busca por número. Ao escolher um, a minuta é colada nos três blocos do
-modelo de Resolução: **ementa**, **considerandos** e **artigos**.
+Botão *"Importar Resolução"*, logo abaixo do primeiro no mesmo painel. A busca e o
+histórico de processos recentes do [Gestão de Autos IA](https://github.com/thelustosa/gestao-de-autos-ia)
+abrem na própria área de mensagens — sem janela sobre o editor. Ao escolher um processo,
+a minuta é colada nos três blocos do modelo de Resolução: **ementa**, **considerandos**
+e **artigos**, e a conclusão aparece no mesmo lugar.
 
 Depois de importar, use *"Linkar protocolos"*: os números vêm crus de propósito, e é
 o Ctrl+Shift+K que os transforma em Link SEI.
@@ -151,13 +154,31 @@ Os `matches` do [manifest.json](manifest.json) estão restritos a `*.go.gov.br`.
 ## Teste
 
 ```
-node test-deteccao.js
-node test-blocos.js
+node test-deteccao.js     # detecção dos números
+node test-blocos.js       # mapeamento dos blocos da Resolução
+node test-contraste.js    # contraste WCAG de todos os pares de cor do painel
+node test-visual.js       # renderiza o painel → test-visual.html + .png
 ```
 
-Cobrem a detecção e o mapeamento dos blocos, que são independentes do editor. A camada
-de inserção e a de colagem não têm teste automatizado — dependem de uma sessão real do
-SEI.
+Os dois primeiros cobrem a detecção e o mapeamento dos blocos, independentes do editor.
+
+[test-visual.js](test-visual.js) extrai o CSS **real** de `content.js` e renderiza as seis
+telas do painel dentro de um `.ck-reset_all` idêntico ao do CKEditor — que é justamente o
+que atropela seletor de classe simples. Ele falha se algum seletor perder a blindagem de
+id ou se uma cor oficial sumir dos tokens. Com o Chrome instalado, também gera o PNG.
+
+A camada de inserção e a de colagem não têm teste automatizado — dependem de uma sessão
+real do SEI.
+
+### Paleta
+
+Verde `#008C59` e ouro `#F9DA2A`, amostrados pixel a pixel do brasão da AGR. O selo
+`sei!` é vazado — branco a 16% sobre o verde, com a exclamação em ouro — como no design,
+e não uma reprodução do logo do SEI.
+
+O verde da marca só rende 4,29:1 com texto branco, abaixo do mínimo, então quem carrega
+texto usa `#007A4E` (5,4:1) e a marca fica nos acentos. `test-contraste.js` guarda essa
+decisão e lista à parte o que é isento por ser lockup de marca.
 
 ## Pendências
 
@@ -170,12 +191,12 @@ SEI.
   Ctrl+Z por bloco foram confirmados no SEI de **treinamento**
   (`45.1.0-infra-202508082051`) com [diagnostico-resolucao.js](diagnostico-resolucao.js).
   Falta a rodada de ponta a ponta com a API do Gestão de Autos IA respondendo — só isso
-  exercita o `sw.js`, a `ponte.js` e o modal juntos.
+  exercita o `sw.js`, a `ponte.js` e a busca do painel juntos.
 - O filtro de roots usa `contenteditable`, que cobre cabeçalho e rodapé de referência.
   O rodapé de endereço (`txaEditor_657`) é editável e continua sendo varrido — hoje
   inofensivo porque CEP e telefone não batem na regex, mas é um limite conhecido.
-- Os botões são anexados à `.ck-toolbar` por seletor de classe. Se o SEI reorganizar a
-  barra, eles caem no fallback flutuante (canto inferior direito) em vez de sumir.
+- O painel é anexado à `.ck-toolbar` por seletor de classe. Se o SEI reorganizar a
+  barra, ele cai no fallback flutuante (canto inferior direito) em vez de sumir.
 - Validado só no SEI de **treinamento**, onde a maioria dos números de teste não existe.
   Falta uma rodada em produção com números reais.
 - [diagnostico.js](diagnostico.js) e [diagnostico-resolucao.js](diagnostico-resolucao.js)
