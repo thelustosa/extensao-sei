@@ -65,7 +65,24 @@ const ACOES = {
     buscar: (q) => chamar('/api/history?limit=8&q=' + encodeURIComponent(q)),
 };
 
+// site-bridge.js roda nas 3 origens do app (produção, :5000, :8080, :5173) e
+// avisa aqui sempre que se confirma presente numa delas. Sem isto, apiBase
+// nunca mudava de API_PADRAO (produção) — mesmo com o badge do site mostrando
+// "Conectada" contra um ambiente local, "Importar Resolução" no SEI buscava
+// dados de produção, não do upload que acabou de rodar localmente. Sempre a
+// ÚLTIMA origem visitada vence: é o fluxo natural (subir o processo na aba do
+// app, trocar para a aba do SEI e importar).
+function registrarPresenca(origem) {
+    if (typeof origem !== 'string' || !origem) return;
+    chrome.storage.local.set({ apiBase: origem });
+}
+
 chrome.runtime.onMessage.addListener((msg, _remetente, responder) => {
+    if (msg && msg.acao === 'presenca') {
+        registrarPresenca(msg.arg);
+        return false; // sem resposta assíncrona necessária
+    }
+
     const acao = ACOES[msg && msg.acao];
     if (!acao) {
         responder({ ok: false, erro: 'Ação desconhecida.' });

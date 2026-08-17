@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SEI AGR - Link automatico",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Detecta numeros de processo e documento no texto do editor do SEI e aplica o link SEI em lote, e importa a minuta gerada pelo Gestao de Autos IA para os blocos da Resolucao.",
   "icons": {
     "16": "icons/icon-16.png",
@@ -36,6 +36,15 @@
         "*://*.go.gov.br/*controlador.php?acao=texto_padrao_interno_cadastrar*"
       ],
       "js": ["ponte.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://gestao-autos.duckdns.org/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
+      "js": ["site-bridge.js"],
       "run_at": "document_start"
     }
   ]
