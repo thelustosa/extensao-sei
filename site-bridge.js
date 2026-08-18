@@ -9,7 +9,7 @@
     // `npm run dev` do frontend Vite: 5173 — é nela que o React roda com hot
     // reload, e sem ela na lista a extensão nunca se anuncia durante o
     // desenvolvimento normal do frontend).
-    var PORTAS_APP = ['5000', '8080', '5173'];
+    var PORTAS_APP = ['5000', '8080', '5173', '8000'];
     if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)
         && PORTAS_APP.indexOf(location.port) === -1) {
         return;
