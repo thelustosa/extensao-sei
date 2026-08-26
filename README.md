@@ -7,8 +7,6 @@ modelo.
 Status: A extensão vem sendo usada diariamente! Até o momento, está funcionando perfeitamente na versão SEI 5.0.4.
 Contribua: Sugestões, melhorias, dicas e feedbacks são muito bem-vindos!
 
-> 📖 **Transparência e Arquitetura**: Para uma análise detalhada dos fluxos de dados, isolamento de segurança, diagramas Mermaid e heurísticas de colagem, consulte [FLUXO.md](FLUXO.md).
-
 ## Linkar protocolos
 
 Com o documento aberto no editor: **Ctrl+Shift+K** ou o botão *"Linkar protocolos"*, no
