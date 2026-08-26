@@ -692,7 +692,7 @@
                     classe: el.className || '',
                     // O estilo do parágrafo identifica a ementa
                     // ('Texto_Ementa'), e é o que a colagem tem que preservar.
-                    estilo: estiloDoRoot(ed, nome),
+                    estilo: estiloDoCorpo(paragrafosDoRoot(ed, nome)),
                 };
             })
             .filter(Boolean)
@@ -712,14 +712,28 @@
 
     // ── Colagem ──────────────────────────────────────────────────────────
 
-    // O atributo de modelo `estilo` do primeiro paragrafo do root. E o plugin
-    // Estilo do SEI que o converte na classe do <p> ('Texto_Ementa',
-    // 'Texto_Justificado_Recuo_Primeira_Linha', ...).
-    function estiloDoRoot(ed, nome) {
+    // Os paragrafos do root como blocos.js os espera: [{ estilo, texto }].
+    // So paragraph -- tabela e imagem nao entram na conta do texto corrido.
+    function paragrafosDoRoot(ed, nome) {
         try {
-            var primeiro = ed.model.document.getRoot(nome).getChild(0);
-            return primeiro && primeiro.getAttribute('estilo');
-        } catch (e) { return undefined; }
+            return [...ed.model.document.getRoot(nome).getChildren()].map(function (p) {
+                if (!p.is('element', 'paragraph')) return { estilo: null, texto: '' };
+                var t = '';
+                for (const n of p.getChildren()) t += (n.data || '');
+                return { estilo: p.getAttribute('estilo') || null, texto: t };
+            });
+        } catch (e) { return []; }
+    }
+
+    // Ate onde a substituicao pode ir. estiloDoCorpo/ultimoDoCorpo vem de
+    // blocos.js (puros, testados com os paragrafos reais do modelo).
+    function alcanceDoCorpo(ed, nome, estilo) {
+        var root = ed.model.document.getRoot(nome);
+        var ultimo = ultimoDoCorpo(paragrafosDoRoot(ed, nome), estilo);
+        if (ultimo < 0) return ed.model.createRangeIn(root);
+        return ed.model.createRange(
+            ed.model.createPositionAt(root, 0),
+            ed.model.createPositionAt(root, ultimo + 1));
     }
 
     // Carrega o estilo do bloco de destino na propria classe dos <p> colados.
@@ -774,11 +788,12 @@
         // Uma transacao: um unico Ctrl+Z desfaz a importacao inteira.
         ed.model.change(function () {
             itens.forEach(function (it, i) {
-                var root = ed.model.document.getRoot(it.bloco.nome);
-                // Range no root inteiro: insertContent apaga o que esta
-                // selecionado antes de inserir, entao isto SUBSTITUI o bloco em
-                // vez de acrescentar. E o que faz reimportar nao empilhar.
-                ed.model.insertContent(frags[i], ed.model.createRangeIn(root));
+                // insertContent apaga o que esta no range antes de inserir,
+                // entao isto SUBSTITUI o bloco em vez de acrescentar -- e o que
+                // faz reimportar nao empilhar. O range para no ultimo paragrafo
+                // do texto corrido, para nao levar a assinatura junto.
+                ed.model.insertContent(frags[i],
+                    alcanceDoCorpo(ed, it.bloco.nome, it.bloco.estilo));
             });
         });
 

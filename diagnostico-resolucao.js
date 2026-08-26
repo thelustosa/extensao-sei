@@ -98,13 +98,37 @@
     const original = {};
     roots.forEach((r) => { original[r.nome] = ed.getData({ rootName: r.nome }); });
 
+    // Estilo do texto corrido = o do paragrafo MAIS LONGO, nao o do primeiro.
+    // No bloco de artigos o primeiro e 'CAPÍTULO I' (centralizado).
+    const estiloCorpo = (r) => {
+        let melhor, maior = -1;
+        r.paragrafos.forEach((p) => { if (p.texto.length > maior) { maior = p.texto.length; melhor = p; } });
+        return melhor && melhor.estilo;
+    };
+    // Alcance = ate o ultimo paragrafo com esse estilo. Depois dele mora a
+    // assinatura ('[Nome do (a) usuário (a)]'), que nao pode ser apagada.
+    const alcance = (r, est) => {
+        let ultimo = -1;
+        r.paragrafos.forEach((p, i) => { if (p.estilo === est) ultimo = i; });
+        const root = ed.model.document.getRoot(r.nome);
+        return ultimo < 0 ? ed.model.createRangeIn(root)
+            : ed.model.createRange(ed.model.createPositionAt(root, 0),
+                                   ed.model.createPositionAt(root, ultimo + 1));
+    };
+    itens.forEach((it) => { it.estilo = estiloCorpo(it.bloco); });
+    out.estilo_do_corpo = itens.map((it) => ({
+        bloco: it.nome,
+        primeiro_paragrafo: it.bloco.paragrafos[0] && it.bloco.paragrafos[0].estilo,
+        mais_longo: it.estilo,
+        difere: (it.bloco.paragrafos[0] || {}).estilo !== it.estilo,
+    }));
+
     try {
         const frags = itens.map((it) => ed.data.toModel(
-            ed.data.processor.toView(comEstilo(it.html, it.bloco.estilo)), '$clipboardHolder'));
+            ed.data.processor.toView(comEstilo(it.html, it.estilo)), '$clipboardHolder'));
         ed.model.change(() => {
             itens.forEach((it, i) => {
-                ed.model.insertContent(frags[i], ed.model.createRangeIn(
-                    ed.model.document.getRoot(it.bloco.nome)));
+                ed.model.insertContent(frags[i], alcance(it.bloco, it.estilo));
             });
         });
     } catch (e) {
@@ -122,10 +146,19 @@
             vazou_para: roots.filter((r) => r.nome !== it.bloco.nome)
                 .filter((r) => ed.getData({ rootName: r.nome }).includes(marcas[it.nome]))
                 .map((r) => r.nome),
-            estilo_esperado: it.bloco.estilo,
+            estilo_esperado: it.estilo,
             estilo_obtido: [...ed.model.document.getRoot(it.bloco.nome).getChildren()]
                 .map((p) => p.getAttribute('estilo') || '(sem estilo)'),
         };
+    });
+    // O que vinha DEPOIS do texto corrido tem que continuar la. No modelo novo
+    // a assinatura mora dentro do root dos artigos.
+    out.cauda_preservada = itens.map((it) => {
+        const cauda = it.bloco.paragrafos
+            .slice(it.bloco.paragrafos.map((p) => p.estilo).lastIndexOf(it.estilo) + 1)
+            .map((p) => p.texto).filter(Boolean);
+        const agora = ed.getData({ rootName: it.bloco.nome });
+        return { bloco: it.nome, cauda, sobreviveu: cauda.every((t) => agora.includes(t)) };
     });
     out.roots_intocados_mudaram = roots
         .filter((r) => !itens.some((it) => it.bloco.nome === r.nome))

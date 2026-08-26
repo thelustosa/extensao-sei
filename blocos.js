@@ -106,6 +106,43 @@ function mapearBlocos(roots) {
     return { ementa: ementa, considerandos: editaveis[iCorpo], artigos: artigos };
 }
 
+// ── Estilo e alcance da colagem, dentro de um bloco ───────────────────────
+// Recebem `paragrafos`: [{ estilo, texto }] na ordem do root.
+
+// O estilo do TEXTO CORRIDO do bloco -- o do paragrafo mais longo, nao o do
+// primeiro.
+//
+// O bloco de artigos do modelo novo nao e homogeneo: comeca com 'CAPÍTULO I' e
+// 'Seção I' em 'Tabela_Texto_Centralizado', e so os paragrafos 'Art. ...' usam
+// 'Texto_Justificado_Recuo_Primeira_Linha_Esp_Simples'. Pegando o primeiro
+// paragrafo, os artigos importados sairiam CENTRALIZADOS. A moda tambem erra:
+// no modelo em branco ha mais linha de titulo que artigo. O paragrafo mais
+// longo e o texto redigido -- titulo de capitulo, '[...]' e linha de assinatura
+// sao curtos por natureza.
+function estiloDoCorpo(paragrafos) {
+    var melhor, maior = -1;
+    (paragrafos || []).forEach(function (p) {
+        var n = String((p && p.texto) || '').length;
+        if (n > maior) { maior = n; melhor = p; }
+    });
+    return melhor ? melhor.estilo : undefined;
+}
+
+// Indice do ultimo paragrafo com o estilo do texto corrido. O que vem depois
+// dele nao pode ser substituido.
+//
+// No modelo novo a ASSINATURA mora dentro do root dos artigos: os ultimos
+// paragrafos sao linhas em branco e '[Nome do (a) usuário (a)]', em
+// 'Texto_Centralizado'. Substituir o root inteiro apagaria isso junto, sem
+// pedir nada a ninguem. -1 = nao achou, e o chamador substitui tudo.
+function ultimoDoCorpo(paragrafos, estilo) {
+    var ultimo = -1;
+    (paragrafos || []).forEach(function (p, i) {
+        if (p && p.estilo === estilo) ultimo = i;
+    });
+    return ultimo;
+}
+
 // Blocos que ja tem texto do usuario -- os que uma colagem destruiria.
 function blocosOcupados(blocos) {
     return ['ementa', 'considerandos', 'artigos'].filter(function (k) {
@@ -115,5 +152,10 @@ function blocosOcupados(blocos) {
 }
 
 if (typeof module !== 'undefined') {
-    module.exports = { mapearBlocos: mapearBlocos, blocosOcupados: blocosOcupados };
+    module.exports = {
+        mapearBlocos: mapearBlocos,
+        blocosOcupados: blocosOcupados,
+        estiloDoCorpo: estiloDoCorpo,
+        ultimoDoCorpo: ultimoDoCorpo,
+    };
 }

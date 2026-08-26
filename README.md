@@ -101,6 +101,18 @@ Detalhes que só apareceram medindo no editor de verdade:
 - **O primeiro editável não é a ementa, é o título.** Existe um bloco
   `RESOLUÇÃO AGR Nº 1, DE 14 DE AGOSTO DE 2026` acima dela. A heurística ingênua
   ("primeiro editável") colava a ementa em cima do número da Resolução.
+- **O bloco de artigos não é homogêneo, e isso quebra duas coisas.** Ele começa com
+  `CAPÍTULO I` e `Seção I` em `Tabela_Texto_Centralizado`; só os parágrafos `Art. …`
+  usam `Texto_Justificado_Recuo_Primeira_Linha_Esp_Simples`. Tirar o estilo do
+  **primeiro** parágrafo fazia os artigos importados saírem centralizados. A moda também
+  erra — no modelo em branco há 7 linhas centralizadas contra 3 de artigo. `estiloDoCorpo`
+  usa o parágrafo **mais longo**: título de capítulo, `[...]` e linha de assinatura são
+  curtos por natureza; o texto redigido não.
+- **A assinatura mora dentro do bloco de artigos.** Os últimos parágrafos de
+  `txaEditor_655` são linhas em branco e `[Nome do (a) usuário (a)]`, em
+  `Texto_Centralizado`. Um `createRangeIn(root)` apagaria isso junto, sem avisar. Por
+  isso o range vai só até o **último parágrafo com o estilo do texto corrido**
+  (`ultimoDoCorpo`); o que vem depois fica.
 - **"Bloco em branco" é decidido por vocabulário, não por um regex do texto todo.**
   O bloco de artigos do modelo novo mistura `CAPÍTULO I`, `Seção I`, `XXXXX`, `[...]`,
   `Art. (Nº)`, `DISPOSIÇÕES FINAIS` e a cláusula de vigência. `ehPlaceholder` remove os
@@ -197,15 +209,15 @@ decisão e lista à parte o que é isento por ser lockup de marca.
 - A importação **sobrescreve** os três blocos. Um Ctrl+Z desfaz tudo, mas só se você
   perceber a tempo — por isso ela pede confirmação quando algum bloco de destino já tem
   texto escrito.
-- **O mapeamento do modelo NOVO ainda não foi medido.** O do modelo antigo (SEI de
-  treinamento, `45.1.0-infra-202508082051`) foi: cada bloco recebeu o seu, sem vazar
-  para os outros, estilos corretos, roots intocados preservados e um Ctrl+Z desfazendo
-  tudo. Para o modelo atual da AGR, `estilo: 'Texto_Ementa'` e a classe
-  `infra-editor__secao-principal` são **suposição** — se os dois não estiverem lá, o
-  mapeamento cai na posição entre os editáveis, que também acerta, mas isso precisa ser
-  confirmado. Rode [diagnostico-resolucao.js](diagnostico-resolucao.js) no editor: ele
-  despeja a estrutura real, aplica o mapeamento e testa a inserção nos três blocos,
-  desfazendo no fim.
+- O mapeamento foi medido nos dois modelos: o de treinamento
+  (`45.1.0-infra-202508082051`, com bloco `RESOLVE:`) e o da AGR
+  (`45.1.0-infra-202602092037`, sem ele). Nos dois, cada bloco recebeu o seu conteúdo,
+  sem vazar para os outros, com os roots não-alvo intactos e um Ctrl+Z desfazendo tudo.
+  **Falta remedir o modelo da AGR** depois das correções de `estiloDoCorpo` e
+  `ultimoDoCorpo` — a medição anterior é que expôs os dois defeitos.
+  [diagnostico-resolucao.js](diagnostico-resolucao.js) já checa os dois: o campo
+  `estilo_do_corpo` mostra primeiro parágrafo vs. mais longo, e `cauda_preservada` diz
+  se a assinatura sobreviveu.
 - O filtro de roots usa `contenteditable`, que cobre cabeçalho e rodapé de referência.
   O rodapé de endereço (`txaEditor_657`) é editável e continua sendo varrido — hoje
   inofensivo porque CEP e telefone não batem na regex, mas é um limite conhecido.

@@ -1,6 +1,6 @@
 // node test-blocos.js
 const assert = require('assert');
-const { mapearBlocos, blocosOcupados } = require('./blocos.js');
+const { mapearBlocos, blocosOcupados, estiloDoCorpo, ultimoDoCorpo } = require('./blocos.js');
 
 const ZWSP = '​';
 const REP = (s, n) => Array(n).fill(s).join(' ');
@@ -140,5 +140,74 @@ assert.deepStrictEqual(blocosOcupados(mapearBlocos(m)), ['ementa']);
 m = modeloNovo();
 m[3].texto = 'O Conselho Regulador da AGR, no uso de suas atribuições, resolve:';
 assert.deepStrictEqual(blocosOcupados(mapearBlocos(m)), ['considerandos']);
+
+// ── estiloDoCorpo / ultimoDoCorpo ─────────────────────────────────────────
+// Os 17 parágrafos reais do bloco de artigos (txaEditor_655), do dump do SEI
+// 45.1.0-infra-202602092037. É o bloco heterogêneo do modelo, e o que expôs os
+// dois defeitos: o estilo saía do 1º parágrafo (centralizado) e a substituição
+// pegava o root inteiro (apagando a assinatura, que mora aqui dentro).
+const CENTRAL = 'Tabela_Texto_Centralizado';
+const ARTIGO = 'Texto_Justificado_Recuo_Primeira_Linha_Esp_Simples';
+const RECUO = 'Texto_Justificado_Recuo_Primeira_Linha';
+const ARTIGOS_655 = [
+    { estilo: CENTRAL, texto: 'CAPÍTULO I' },
+    { estilo: CENTRAL, texto: 'XXXXXXXXXXXXX' },
+    { estilo: CENTRAL, texto: '' },
+    { estilo: CENTRAL, texto: 'Seção I' },
+    { estilo: CENTRAL, texto: 'XXXXXXXXXXXXX' },
+    { estilo: CENTRAL, texto: '' },
+    { estilo: ARTIGO, texto: 'Art.1º ' + REP('Elaborar o Texto,', 20) },
+    { estilo: RECUO, texto: '[...]' },
+    { estilo: RECUO, texto: '' },
+    { estilo: CENTRAL, texto: 'CAPÍTULO (Nº)DISPOSIÇÕES FINAIS' },
+    { estilo: 'Tabela_Texto_8', texto: '' },
+    { estilo: ARTIGO, texto: 'Art. (Nº) Elaborar o Texto, Elaborar o Texto, Elaborar o Texto ...' },
+    { estilo: ARTIGO, texto: 'Art. (Nº) Esta Resolução entra em vigor na data de sua publicação.' },
+    { estilo: RECUO, texto: '' },
+    { estilo: RECUO, texto: '' },
+    { estilo: 'Texto_Centralizado', texto: '[Nome do (a) usuário (a)]' },
+    { estilo: 'Texto_Centralizado', texto: '' },
+];
+
+// O 1º parágrafo é 'Tabela_Texto_Centralizado' — usá-lo centralizaria os
+// artigos importados. O mais longo é o 'Art.1º ...', que dá o estilo certo.
+assert.strictEqual(estiloDoCorpo(ARTIGOS_655), ARTIGO, 'estilo dos artigos');
+assert.notStrictEqual(estiloDoCorpo(ARTIGOS_655), CENTRAL);
+// A moda também erraria: há 7 centralizados contra 3 de artigo.
+assert.strictEqual(ARTIGOS_655.filter((p) => p.estilo === CENTRAL).length, 7);
+assert.strictEqual(ARTIGOS_655.filter((p) => p.estilo === ARTIGO).length, 3);
+
+// A substituição para no último 'Art.' (índice 12). Os índices 13..16 — linhas
+// em branco e '[Nome do (a) usuário (a)]' — ficam.
+assert.strictEqual(ultimoDoCorpo(ARTIGOS_655, ARTIGO), 12, 'alcance para antes da assinatura');
+assert.strictEqual(ARTIGOS_655[15].texto, '[Nome do (a) usuário (a)]');
+
+// Blocos homogêneos: o alcance cobre tudo, como antes.
+const EMENTA_658 = [
+    { estilo: 'Texto_Ementa', texto: REP('Elaborar o Texto,', 20) },
+    { estilo: 'Texto_Ementa', texto: '' },
+];
+assert.strictEqual(estiloDoCorpo(EMENTA_658), 'Texto_Ementa');
+assert.strictEqual(ultimoDoCorpo(EMENTA_658, 'Texto_Ementa'), 1);
+
+const CORPO_653 = [
+    { estilo: RECUO, texto: ZWSP + REP('Considerando,', 24) + ' resolve:' },
+    { estilo: RECUO, texto: '' },
+];
+assert.strictEqual(estiloDoCorpo(CORPO_653), RECUO);
+assert.strictEqual(ultimoDoCorpo(CORPO_653, RECUO), 1);
+
+// Documento já redigido: o estilo vem do artigo mais longo, não do capítulo.
+assert.strictEqual(estiloDoCorpo([
+    { estilo: CENTRAL, texto: 'CAPÍTULO I' },
+    { estilo: ARTIGO, texto: 'Art. 1º. Ratificar a decisão de Primeira Instância proferida pela Câmara de Julgamento.' },
+]), ARTIGO);
+
+// Degenerados: sem parágrafo, sem estilo, estilo inexistente.
+assert.strictEqual(estiloDoCorpo([]), undefined);
+assert.strictEqual(estiloDoCorpo(null), undefined);
+assert.strictEqual(ultimoDoCorpo(ARTIGOS_655, 'Estilo_Que_Nao_Existe'), -1,
+    '-1 faz o chamador substituir o root inteiro');
+assert.strictEqual(ultimoDoCorpo(null, ARTIGO), -1);
 
 console.log('ok');
