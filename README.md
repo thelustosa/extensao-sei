@@ -209,15 +209,17 @@ decisão e lista à parte o que é isento por ser lockup de marca.
 - A importação **sobrescreve** os três blocos. Um Ctrl+Z desfaz tudo, mas só se você
   perceber a tempo — por isso ela pede confirmação quando algum bloco de destino já tem
   texto escrito.
-- O mapeamento foi medido nos dois modelos: o de treinamento
+- O mapeamento e a colagem foram medidos nos dois modelos: o de treinamento
   (`45.1.0-infra-202508082051`, com bloco `RESOLVE:`) e o da AGR
   (`45.1.0-infra-202602092037`, sem ele). Nos dois, cada bloco recebeu o seu conteúdo,
   sem vazar para os outros, com os roots não-alvo intactos e um Ctrl+Z desfazendo tudo.
-  **Falta remedir o modelo da AGR** depois das correções de `estiloDoCorpo` e
-  `ultimoDoCorpo` — a medição anterior é que expôs os dois defeitos.
-  [diagnostico-resolucao.js](diagnostico-resolucao.js) já checa os dois: o campo
-  `estilo_do_corpo` mostra primeiro parágrafo vs. mais longo, e `cauda_preservada` diz
-  se a assinatura sobreviveu.
+  No da AGR, depois das correções: os artigos saem em
+  `Texto_Justificado_Recuo_Primeira_Linha_Esp_Simples` (e não no
+  `Tabela_Texto_Centralizado` do primeiro parágrafo) e `[Nome do (a) usuário (a)]`
+  sobrevive à substituição. Rodar [diagnostico-resolucao.js](diagnostico-resolucao.js)
+  é o jeito de refazer essa medição quando o modelo mudar de novo.
+- **Falta a rodada de ponta a ponta contra a produção** do Gestão de Autos IA — a
+  importação real, com a API respondendo, no modelo novo.
 - O filtro de roots usa `contenteditable`, que cobre cabeçalho e rodapé de referência.
   O rodapé de endereço (`txaEditor_657`) é editável e continua sendo varrido — hoje
   inofensivo porque CEP e telefone não batem na regex, mas é um limite conhecido.
