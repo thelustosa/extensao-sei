@@ -2,142 +2,143 @@
 const assert = require('assert');
 const { mapearBlocos, blocosOcupados } = require('./blocos.js');
 
-// Os 11 roots reais do modelo de Resolução do SEI 5.0.4, como o
-// diagnostico-resolucao.js os devolveu (SEI de treinamento, CKEditor
-// 45.1.0-infra-202508082051). Textos abreviados; estilo, classe e ordem são os
-// do dump. Este é o caso que importa: se ele passar, a extensão acerta.
 const ZWSP = '​';
 const REP = (s, n) => Array(n).fill(s).join(' ');
 
-const modeloReal = () => [
+// ── Modelo NOVO da AGR (SEI de produção) ──────────────────────────────────
+// Sem bloco 'RESOLVE:': o "resolve:" virou o fim do corpo. Estrutura lida da
+// tela; `estilo` e `classe` são o que o diagnóstico deve confirmar.
+const ARTIGOS_EM_BRANCO =
+    'CAPÍTULO I XXXXXXXXXXXX Seção I XXXXXXXXXXXX ' +
+    'Art.1º ' + REP('Elaborar o Texto,', 20) + ' [...] ' +
+    'CAPÍTULO (Nº) DISPOSIÇÕES FINAIS ' +
+    'Art. (Nº) Elaborar o Texto, Elaborar o Texto, Elaborar o Texto ... ' +
+    'Art. (Nº) Esta Resolução entra em vigor na data de sua publicação.';
+
+const modeloNovo = () => [
     {
-        nome: 'txaEditor_647', editavel: false, estilo: undefined,
-        classe: 'ck ck-content ck-editor__editable ck-read-only infra-editor__readonly infra-doc',
-        texto: 'ESTADO DE GOIÁS SECRETARIA DE ESTADO DA ADMINISTRAÇÃO',
+        nome: 'cabecalho', editavel: false, estilo: undefined,
+        classe: 'ck-read-only infra-editor__readonly',
+        texto: 'ESTADO DE GOIÁS AGÊNCIA GOIANA DE REGULAÇÃO, CONTROLE E FISCALIZAÇÃO DE SERVIÇOS PÚBLICOS ASSESSORIA DA SECRETARIA GERAL',
     },
     {
-        nome: 'txaEditor_648', editavel: true, estilo: 'Texto_Justificado_Recuo_Primeira_Linha',
-        classe: 'ck ck-content ck-editor__editable infra-doc',
-        texto: 'Resolução nº 2, de 13 de agosto de 2026',
+        nome: 'titulo', editavel: true, estilo: 'Texto_Centralizado_Maiusculas', classe: 'ck-content',
+        texto: 'RESOLUÇÃO AGR Nº 1, DE 14 DE AGOSTO DE 2026',
     },
     {
-        nome: 'txaEditor_658', editavel: true, estilo: 'Texto_Ementa',
-        classe: 'ck ck-content ck-editor__editable infra-doc ck-focused',
-        texto: REP('Elaborar o Texto,', 20),
+        nome: 'ementa', editavel: true, estilo: 'Texto_Ementa', classe: 'ck-content',
+        texto: REP('Elaborar o Texto,', 10),
     },
     {
-        nome: 'txaEditor_653', editavel: true, estilo: 'Texto_Justificado_Recuo_Primeira_Linha',
-        classe: 'ck ck-content ck-editor__editable infra-doc',
-        texto: ZWSP + REP('Considerando,' + ZWSP, 24),
+        nome: 'corpo', editavel: true, estilo: 'Texto_Justificado_Recuo_Primeira_Linha', classe: 'ck-content',
+        texto: REP('Considerando,', 18) + ' resolve:',
     },
     {
-        nome: 'txaEditor_651', editavel: true, estilo: 'Texto_Justificado_Recuo_Primeira_Linha_Esp15',
-        classe: 'ck ck-content ck-editor__editable infra-doc',
-        texto: 'RESOLVE:',
+        nome: 'artigos', editavel: true, estilo: 'Texto_Justificado_Recuo_Primeira_Linha',
+        classe: 'ck-content infra-editor__secao-principal',
+        texto: ARTIGOS_EM_BRANCO,
     },
     {
-        nome: 'txaEditor_655', editavel: true, estilo: 'Texto_Justificado_Recuo_Primeira_Linha',
-        classe: 'ck ck-content ck-editor__editable infra-editor__secao-principal infra-doc',
-        texto: REP('Elaborar o Texto,', 60),
-    },
-    { nome: 'txaEditor_661', editavel: false, estilo: undefined, classe: 'ck-read-only', texto: '' },
-    {
-        nome: 'txaEditor_663', editavel: true, estilo: 'Texto_Justificado_Recuo_Primeira_Linha',
-        classe: 'ck ck-content ck-editor__editable infra-doc',
-        texto: 'CONSELHO DE DESENVOLVIMENTO DO ESTADO, em GOIANIA - GO, aos 13 dias do mês de agosto de 2026.',
-    },
-    { nome: 'txaEditor_662', editavel: false, estilo: undefined, classe: 'ck-read-only', texto: '' },
-    {
-        nome: 'txaEditor_657', editavel: true, estilo: undefined,
-        classe: 'ck ck-content ck-editor__editable infra-doc',
-        texto: 'CONSELHO DE DESENVOLVIMENTO DO ESTADO CEP 74000-000 - GOIANIA - GO',
-    },
-    {
-        nome: 'txaEditor_708', editavel: false, estilo: undefined, classe: 'ck-read-only',
-        texto: 'Referência: Processo nº 202600005004559 SEI 8441792',
+        nome: 'assinatura', editavel: true, estilo: 'Texto_Centralizado', classe: 'ck-content',
+        texto: '[Nome do (a) usuário (a)]',
     },
 ];
 
-let b = mapearBlocos(modeloReal());
-assert.deepStrictEqual(
-    [b.ementa.nome, b.considerandos.nome, b.artigos.nome],
-    ['txaEditor_658', 'txaEditor_653', 'txaEditor_655'],
-    'modelo real do SEI');
+let b = mapearBlocos(modeloNovo());
+assert.deepStrictEqual([b.ementa.nome, b.considerandos.nome, b.artigos.nome],
+    ['ementa', 'corpo', 'artigos'], 'modelo novo (sem RESOLVE:)');
 
-// O título ("Resolução nº 2, de …") é o PRIMEIRO editável e não é a ementa.
-// Foi o erro que o diagnóstico pegou: sem o estilo, a heurística "primeiro
-// editável antes do RESOLVE:" colava a ementa em cima do número da Resolução.
-assert.notStrictEqual(b.ementa.nome, 'txaEditor_648');
-// E o rodapé de endereço, editável, não pode ser confundido com os artigos —
-// é a classe infra-editor__secao-principal que decide.
-assert.notStrictEqual(b.artigos.nome, 'txaEditor_657');
+// O título é o 1º editável e não pode virar ementa; a assinatura vem depois
+// dos artigos e não pode virar nada.
+assert.notStrictEqual(b.ementa.nome, 'titulo');
+['ementa', 'considerandos', 'artigos'].forEach((k) =>
+    assert.notStrictEqual(b[k].nome, 'assinatura'));
 
-// O 'RESOLVE:' vem editável neste modelo: é divisor, nunca destino.
-[b.ementa.nome, b.considerandos.nome, b.artigos.nome].forEach((n) =>
-    assert.notStrictEqual(n, 'txaEditor_651'));
+// Sem os marcadores do SEI, a posição entre os editáveis ainda acerta.
+b = mapearBlocos(modeloNovo().map((r) => ({ ...r, estilo: 'Generico', classe: 'ck-content' })));
+assert.deepStrictEqual([b.ementa.nome, b.considerandos.nome, b.artigos.nome],
+    ['ementa', 'corpo', 'artigos'], 'modelo novo sem estilo/classe');
 
-// ── Fallback posicional: outro modelo, sem os marcadores do SEI ────────────
-const semMarcadores = modeloReal().map((r) => ({ ...r, estilo: 'Generico', classe: 'ck-content' }));
-b = mapearBlocos(semMarcadores);
-assert.deepStrictEqual(
-    [b.ementa.nome, b.considerandos.nome, b.artigos.nome],
-    ['txaEditor_658', 'txaEditor_653', 'txaEditor_655'],
-    'sem estilo/classe, a posição em torno do RESOLVE: ainda acerta');
+// ── Modelo ANTIGO (SEI de treinamento), com bloco 'RESOLVE:' editável ─────
+// Continua funcionando: o RESOLVE: é pulado na escolha do corpo, senão ele
+// seria o "editável logo antes dos artigos".
+const modeloAntigo = () => [
+    { nome: 'txaEditor_647', editavel: false, texto: 'ESTADO DE GOIÁS' },
+    { nome: 'txaEditor_648', editavel: true, estilo: 'Texto_Justificado_Recuo_Primeira_Linha', texto: 'Resolução nº 2, de 13 de agosto de 2026' },
+    { nome: 'txaEditor_658', editavel: true, estilo: 'Texto_Ementa', texto: REP('Elaborar o Texto,', 20) },
+    { nome: 'txaEditor_653', editavel: true, estilo: 'Texto_Justificado_Recuo_Primeira_Linha', texto: ZWSP + REP('Considerando,' + ZWSP, 24) },
+    { nome: 'txaEditor_651', editavel: true, estilo: 'Texto_Justificado_Recuo_Primeira_Linha_Esp15', texto: 'RESOLVE:' },
+    { nome: 'txaEditor_655', editavel: true, estilo: 'Texto_Justificado_Recuo_Primeira_Linha', classe: 'infra-editor__secao-principal', texto: REP('Elaborar o Texto,', 60) },
+    { nome: 'txaEditor_661', editavel: false, texto: '' },
+    { nome: 'txaEditor_663', editavel: true, estilo: 'Texto_Justificado_Recuo_Primeira_Linha', texto: 'CONSELHO, em GOIANIA - GO, aos 13 dias do mês de agosto de 2026.' },
+    { nome: 'txaEditor_657', editavel: true, texto: 'CEP 74000-000 - GOIANIA - GO' },
+    { nome: 'txaEditor_708', editavel: false, texto: 'Referência: Processo nº 202600005004559 SEI 8441792' },
+];
+b = mapearBlocos(modeloAntigo());
+assert.deepStrictEqual([b.ementa.nome, b.considerandos.nome, b.artigos.nome],
+    ['txaEditor_658', 'txaEditor_653', 'txaEditor_655'], 'modelo antigo, com RESOLVE:');
+// O RESOLVE: nunca é destino.
+['ementa', 'considerandos', 'artigos'].forEach((k) =>
+    assert.notStrictEqual(b[k].nome, 'txaEditor_651'));
 
-// ── Documento já redigido: a identificação não pode depender do placeholder ──
+// ── Documento já redigido: identificar não depende do placeholder ─────────
 b = mapearBlocos([
     { nome: 'cab', editavel: false, texto: 'AGÊNCIA GOIANA DE REGULAÇÃO' },
-    { nome: 'tit', editavel: true, estilo: 'Texto_Justificado_Recuo_Primeira_Linha', texto: 'Resolução nº 9' },
+    { nome: 'tit', editavel: true, estilo: 'x', texto: 'RESOLUÇÃO AGR Nº 9' },
     { nome: 'em', editavel: true, estilo: 'Texto_Ementa', texto: 'Dispõe sobre o Auto de Infração nº 45680 (80773781).' },
-    { nome: 'con', editavel: true, estilo: 'x', texto: 'O Conselho Regulador da AGR, no uso de suas atribuições' },
-    { nome: 'res', editavel: false, texto: 'RESOLVE:' },
+    { nome: 'cor', editavel: true, estilo: 'x', texto: 'O Conselho Regulador da AGR, no uso de suas atribuições, resolve:' },
     { nome: 'art', editavel: true, classe: 'infra-editor__secao-principal', texto: 'Art. 1º. Anular o Auto.' },
 ]);
-assert.deepStrictEqual([b.ementa.nome, b.considerandos.nome, b.artigos.nome], ['em', 'con', 'art']);
+assert.deepStrictEqual([b.ementa.nome, b.considerandos.nome, b.artigos.nome], ['em', 'cor', 'art']);
 
-// ── Recusas: colar no lugar errado é pior que não colar ────────────────────
+// ── Recusas: colar no lugar errado é pior que não colar ───────────────────
 assert.strictEqual(mapearBlocos([
     { nome: 'cab', editavel: false, texto: 'AGR' },
-    { nome: 'corpo', editavel: true, texto: 'Um ofício qualquer, sem RESOLVE.' },
-]), null, 'documento que não é Resolução');
+    { nome: 'corpo', editavel: true, texto: 'Um ofício qualquer.' },
+]), null, 'editáveis de menos');
 
 assert.strictEqual(mapearBlocos([
-    { nome: 'r1', editavel: true, texto: 'Elaborar o Texto.' },
-    { nome: 'rR', editavel: false, texto: 'RESOLVE:' },
-    { nome: 'rA', editavel: true, texto: 'Elaborar o Texto.' },
-]), null, 'um editável só antes do RESOLVE: não separa ementa de considerandos');
+    { nome: 'tit', editavel: true, texto: 'Título' },
+    { nome: 'art', editavel: true, classe: 'infra-editor__secao-principal', texto: 'Art. 1º' },
+    { nome: 'fim', editavel: true, texto: 'rodapé' },
+]), null, 'artigos logo depois do título: não sobra bloco para o corpo');
 
+// Ementa marcada DEPOIS dos artigos: ordem incoerente, recusa em vez de chutar.
 assert.strictEqual(mapearBlocos([
-    { nome: 'r1', editavel: true, texto: 'Elaborar o Texto.' },
-    { nome: 'r2', editavel: true, texto: 'Considerando,' },
-    { nome: 'rR', editavel: false, texto: 'RESOLVE:' },
-]), null, 'sem bloco editável depois do RESOLVE: não há onde colar os artigos');
+    { nome: 'tit', editavel: true, texto: 'Título' },
+    { nome: 'a', editavel: true, texto: 'algo' },
+    { nome: 'art', editavel: true, classe: 'infra-editor__secao-principal', texto: 'Art. 1º' },
+    { nome: 'em', editavel: true, estilo: 'Texto_Ementa', texto: 'ementa fora de lugar' },
+]), null, 'ordem incoerente');
 
 assert.strictEqual(mapearBlocos([]), null);
+assert.strictEqual(mapearBlocos(null), null);
 
-// ── blocosOcupados: o que a colagem destruiria ─────────────────────────────
-// Os considerandos em branco vêm com U+200B entre cada "Considerando," e
-// trim() não remove esse caractere. Sem tratá-lo, o modelo em branco pedia
-// confirmação como se o usuário já tivesse escrito.
-b = mapearBlocos(modeloReal());
-assert.deepStrictEqual(blocosOcupados(b), [], 'modelo em branco não pede confirmação');
+// ── blocosOcupados: o que a colagem destruiria ────────────────────────────
+// Modelo novo em branco: os três blocos são só vocabulário do modelo. Inclui o
+// bloco de artigos, que é o mais complexo — CAPÍTULO, Seção, XXXX, '[...]',
+// 'Art. (Nº)', DISPOSIÇÕES FINAIS e a cláusula de vigência.
+assert.deepStrictEqual(blocosOcupados(mapearBlocos(modeloNovo())), [],
+    'modelo novo em branco não pede confirmação');
+assert.deepStrictEqual(blocosOcupados(mapearBlocos(modeloAntigo())), [],
+    'modelo antigo em branco também não');
 
-// O innerText real dos considerandos: U+200B nas junções e U+00A0 (&nbsp;)
-// depois de cada vírgula, exatamente como saiu do dump do editor.
-const consideandosReais = ZWSP + 'Considerando, ' + ZWSP + 'Considerando, '
-    + ZWSP + 'Considerando, ' + ZWSP + 'Considerando.';
-const comNbsp = modeloReal();
-comNbsp[3].texto = consideandosReais;
-assert.deepStrictEqual(blocosOcupados(mapearBlocos(comNbsp)), [],
-    'ZWSP + NBSP do modelo em branco não contam como texto do usuário');
+// U+200B do modelo em branco não conta como texto do usuário.
+let m = modeloNovo();
+m[3].texto = ZWSP + 'Considerando, ' + ZWSP + 'Considerando, ' + ZWSP + 'Considerando, resolve:';
+assert.deepStrictEqual(blocosOcupados(mapearBlocos(m)), []);
 
-const comTexto = modeloReal();
-comTexto[5].texto = 'Art. 1º. Anular o Auto de Infração nº 45680.';
-assert.deepStrictEqual(blocosOcupados(mapearBlocos(comTexto)), ['artigos'],
-    'texto do usuário pede confirmação');
+// Texto do usuário em qualquer bloco pede confirmação.
+m = modeloNovo();
+m[4].texto = 'Art. 1º. Ratificar a decisão de Primeira Instância proferida pela Câmara.';
+assert.deepStrictEqual(blocosOcupados(mapearBlocos(m)), ['artigos']);
 
-const soEmenta = modeloReal();
-soEmenta[2].texto = 'Dispõe sobre o Auto de Infração nº 45680.';
-assert.deepStrictEqual(blocosOcupados(mapearBlocos(soEmenta)), ['ementa']);
+m = modeloNovo();
+m[2].texto = 'Dispõe sobre o Auto de Infração nº 45680.';
+assert.deepStrictEqual(blocosOcupados(mapearBlocos(m)), ['ementa']);
+
+m = modeloNovo();
+m[3].texto = 'O Conselho Regulador da AGR, no uso de suas atribuições, resolve:';
+assert.deepStrictEqual(blocosOcupados(mapearBlocos(m)), ['considerandos']);
 
 console.log('ok');

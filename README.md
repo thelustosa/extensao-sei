@@ -71,11 +71,12 @@ o Ctrl+Shift+K que os transforma em Link SEI.
    são `txaEditor_<id>` e o id muda a cada documento. A identificação sai de três
    sinais, em ordem de confiança — o **estilo** do parágrafo (`Texto_Ementa` é só da
    ementa), a **classe** do editable (`infra-editor__secao-principal` marca os artigos)
-   e a **posição** em relação ao bloco `RESOLVE:`, que é o divisor. Os considerandos
-   ficam só na posição: o estilo deles (`Texto_Justificado_Recuo_Primeira_Linha`) é o
-   mesmo do título e do bloco de local e data.
-3. Sem o bloco `RESOLVE:`, ou com menos de dois editáveis antes dele, a importação é
-   **recusada**: colar no lugar errado é pior que não colar.
+   e a **posição entre os editáveis**, como reserva. O corpo fica só na posição, por
+   ser o editável logo antes dos artigos: o estilo dele
+   (`Texto_Justificado_Recuo_Primeira_Linha`) é o mesmo do título e da assinatura.
+3. A importação é **recusada** se a ordem não fechar (ementa antes do corpo, corpo
+   antes dos artigos) ou se houver menos de três editáveis: colar no lugar errado é
+   pior que não colar. O que ela viu vai para o console.
 4. A ordenação dos roots sai de `compareDocumentPosition`, não de `getRootNames()` —
    essa devolve a ordem de registro, que não é garantidamente a visual.
 5. A colagem usa as **mesmas duas etapas do Ctrl+V**, sem disparar o evento: o HTML sobe
@@ -90,13 +91,22 @@ o Ctrl+Shift+K que os transforma em Link SEI.
 
 Detalhes que só apareceram medindo no editor de verdade:
 
-- **O primeiro editável antes do `RESOLVE:` não é a ementa, é o título.** No modelo há
-  um bloco `Resolução nº 2, de 13 de agosto de 2026` acima dela. A heurística ingênua
-  ("primeiro editável") colava a ementa em cima do número da Resolução. Daí o estilo
-  `Texto_Ementa` como sinal primário, e "o bloco imediatamente acima dos considerandos"
-  como reserva.
-- **O `RESOLVE:` é editável**, ao contrário do que o nome read-only sugere. Ele é
-  divisor, nunca destino — fica fora dos dois lados por construção.
+- **O modelo mudou no meio do caminho, e o divisor sumiu.** O modelo antigo (SEI de
+  treinamento) tinha um bloco `RESOLVE:` próprio entre o corpo e os artigos, e o
+  mapeamento usava ele de divisor. O modelo atual da AGR não tem: o `resolve:` virou o
+  fim do corpo (`Considerando, …, resolve:`). Por isso os sinais primários passaram a
+  ser o estilo e a classe, com a posição de reserva — e `_pularResolve` mantém os dois
+  modelos funcionando, porque no antigo o `RESOLVE:` **era editável** e seria escolhido
+  como corpo por ser "o editável logo antes dos artigos".
+- **O primeiro editável não é a ementa, é o título.** Existe um bloco
+  `RESOLUÇÃO AGR Nº 1, DE 14 DE AGOSTO DE 2026` acima dela. A heurística ingênua
+  ("primeiro editável") colava a ementa em cima do número da Resolução.
+- **"Bloco em branco" é decidido por vocabulário, não por um regex do texto todo.**
+  O bloco de artigos do modelo novo mistura `CAPÍTULO I`, `Seção I`, `XXXXX`, `[...]`,
+  `Art. (Nº)`, `DISPOSIÇÕES FINAIS` e a cláusula de vigência. `ehPlaceholder` remove os
+  tokens conhecidos e pergunta se sobrou alguma letra. O viés dessa forma é o seguro:
+  token não previsto conta como texto do usuário, então a extensão **pergunta** em vez
+  de sobrescrever calada.
 - **Disparar o evento de colagem não permite escolher o root.** O `ClipboardPipeline`
   insere onde está a seleção do **documento**, que é única num editor multi-root. Mover
   essa seleção para outro root antes de disparar não funciona: `el.focus()` é assíncrono
@@ -187,11 +197,15 @@ decisão e lista à parte o que é isento por ser lockup de marca.
 - A importação **sobrescreve** os três blocos. Um Ctrl+Z desfaz tudo, mas só se você
   perceber a tempo — por isso ela pede confirmação quando algum bloco de destino já tem
   texto escrito.
-- O mapeamento dos blocos, as duas vias de colagem, a preservação do estilo e o
-  Ctrl+Z por bloco foram confirmados no SEI de **treinamento**
-  (`45.1.0-infra-202508082051`) com [diagnostico-resolucao.js](diagnostico-resolucao.js).
-  Falta a rodada de ponta a ponta com a API do Gestão de Autos IA respondendo — só isso
-  exercita o `sw.js`, a `ponte.js` e a busca do painel juntos.
+- **O mapeamento do modelo NOVO ainda não foi medido.** O do modelo antigo (SEI de
+  treinamento, `45.1.0-infra-202508082051`) foi: cada bloco recebeu o seu, sem vazar
+  para os outros, estilos corretos, roots intocados preservados e um Ctrl+Z desfazendo
+  tudo. Para o modelo atual da AGR, `estilo: 'Texto_Ementa'` e a classe
+  `infra-editor__secao-principal` são **suposição** — se os dois não estiverem lá, o
+  mapeamento cai na posição entre os editáveis, que também acerta, mas isso precisa ser
+  confirmado. Rode [diagnostico-resolucao.js](diagnostico-resolucao.js) no editor: ele
+  despeja a estrutura real, aplica o mapeamento e testa a inserção nos três blocos,
+  desfazendo no fim.
 - O filtro de roots usa `contenteditable`, que cobre cabeçalho e rodapé de referência.
   O rodapé de endereço (`txaEditor_657`) é editável e continua sendo varrido — hoje
   inofensivo porque CEP e telefone não batem na regex, mas é um limite conhecido.

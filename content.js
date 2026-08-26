@@ -672,10 +672,10 @@
     }
 
     // ── Mapeamento dos blocos da Resolucao ───────────────────────────────
-    // O documento do SEI 5 e multi-root: cada bloco do modelo (ementa,
-    // considerandos, RESOLVE:, artigos) e um root separado. A ordem de
-    // getRootNames() e a de registro, nao a visual -- por isso a ordenacao sai
-    // da posicao real no DOM.
+    // O documento do SEI 5 e multi-root: cada bloco do modelo (titulo, ementa,
+    // corpo, artigos, assinatura) e um root separado. A ordem de getRootNames()
+    // e a de registro, nao a visual -- por isso a ordenacao sai da posicao real
+    // no DOM.
     function rootsEmOrdem(ed) {
         return ed.model.document.getRootNames()
             .map(function (nome) {
@@ -806,8 +806,9 @@
         var blocos = blocosResolucao(ed);
         if (!blocos) {
             console.warn('[sei-agr] roots desta página:', rootsEmOrdem(ed));
-            return aviso('Este documento não parece ser uma Resolução: não encontrei os blocos ' +
-                         'ementa / considerandos / RESOLVE: / artigos.', 'erro');
+            return aviso('Este documento não parece ser uma Resolução: não encontrei os ' +
+                         'blocos de ementa, corpo e artigos. Veja o console (F12) para os ' +
+                         'blocos que a extensão enxergou.', 'erro');
         }
 
         // Sobrescrever texto que o usuario escreveu custa o trabalho dele. Um
