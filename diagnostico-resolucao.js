@@ -126,9 +126,20 @@
     try {
         const frags = itens.map((it) => ed.data.toModel(
             ed.data.processor.toView(comEstilo(it.html, it.estilo)), '$clipboardHolder'));
-        ed.model.change(() => {
+        ed.model.change((w) => {
             itens.forEach((it, i) => {
                 ed.model.insertContent(frags[i], alcance(it.bloco, it.estilo));
+                // A linha '[Nome do (a) usuário (a)]' e marcador do modelo:
+                // sai na importacao. De tras pra frente, para os indices dos
+                // anteriores continuarem validos.
+                const root = ed.model.document.getRoot(it.bloco.nome);
+                const filhos = [...root.getChildren()];
+                for (let k = filhos.length - 1; k >= 0; k--) {
+                    const c = filhos[k];
+                    if (!c.is('element', 'paragraph')) continue;
+                    let t = ''; for (const n of c.getChildren()) t += (n.data || '');
+                    if (/^\[[^\]]*nome[^\]]*usu[áa]rio[^\]]*\]$/i.test(t.replace(/​/g, '').trim())) w.remove(c);
+                }
             });
         });
     } catch (e) {
@@ -151,14 +162,21 @@
                 .map((p) => p.getAttribute('estilo') || '(sem estilo)'),
         };
     });
-    // O que vinha DEPOIS do texto corrido tem que continuar la. No modelo novo
-    // a assinatura mora dentro do root dos artigos.
-    out.cauda_preservada = itens.map((it) => {
-        const cauda = it.bloco.paragrafos
+    // A cauda (o que vinha depois do texto corrido) fica -- MENOS a linha
+    // '[Nome do (a) usuário (a)]', que a importacao apaga de proposito.
+    const eAssinatura = (t) => /^\[[^\]]*nome[^\]]*usu[áa]rio[^\]]*\]$/i.test(String(t || '').replace(/​/g, '').trim());
+    out.cauda = itens.map((it) => {
+        const depois = it.bloco.paragrafos
             .slice(it.bloco.paragrafos.map((p) => p.estilo).lastIndexOf(it.estilo) + 1)
             .map((p) => p.texto).filter(Boolean);
         const agora = ed.getData({ rootName: it.bloco.nome });
-        return { bloco: it.nome, cauda, sobreviveu: cauda.every((t) => agora.includes(t)) };
+        return {
+            bloco: it.nome,
+            assinatura_do_modelo: depois.filter(eAssinatura),
+            assinatura_removida: depois.filter(eAssinatura).every((t) => !agora.includes(t)),
+            resto: depois.filter((t) => !eAssinatura(t)),
+            resto_preservado: depois.filter((t) => !eAssinatura(t)).every((t) => agora.includes(t)),
+        };
     });
     out.roots_intocados_mudaram = roots
         .filter((r) => !itens.some((it) => it.bloco.nome === r.nome))

@@ -143,6 +143,19 @@ function ultimoDoCorpo(paragrafos, estilo) {
     return ultimo;
 }
 
+// A linha '[Nome do (a) usuário (a)]' que o modelo deixa no fim do bloco de
+// artigos. E marcador do modelo, nao conteudo: quem assina no SEI e a acao
+// Assinar, e a linha so atrapalha na minuta importada.
+//
+// Casa so a forma ENTRE COLCHETES do modelo. Um nome de verdade digitado no
+// lugar dela ("JOAO DA SILVA") nao casa, entao reimportar nao apaga assinatura
+// que alguem escreveu.
+var RE_ASSINATURA_MODELO = /^\[[^\]]*nome[^\]]*usu[áa]rio[^\]]*\]$/i;
+
+function ehAssinaturaModelo(t) {
+    return RE_ASSINATURA_MODELO.test(String(t || '').replace(/​/g, '').trim());
+}
+
 // Blocos que ja tem texto do usuario -- os que uma colagem destruiria.
 function blocosOcupados(blocos) {
     return ['ementa', 'considerandos', 'artigos'].filter(function (k) {
@@ -157,5 +170,6 @@ if (typeof module !== 'undefined') {
         blocosOcupados: blocosOcupados,
         estiloDoCorpo: estiloDoCorpo,
         ultimoDoCorpo: ultimoDoCorpo,
+        ehAssinaturaModelo: ehAssinaturaModelo,
     };
 }

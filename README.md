@@ -110,9 +110,13 @@ Detalhes que só apareceram medindo no editor de verdade:
   curtos por natureza; o texto redigido não.
 - **A assinatura mora dentro do bloco de artigos.** Os últimos parágrafos de
   `txaEditor_655` são linhas em branco e `[Nome do (a) usuário (a)]`, em
-  `Texto_Centralizado`. Um `createRangeIn(root)` apagaria isso junto, sem avisar. Por
+  `Texto_Centralizado`. Um `createRangeIn(root)` apagaria isso em bloco, sem avisar. Por
   isso o range vai só até o **último parágrafo com o estilo do texto corrido**
-  (`ultimoDoCorpo`); o que vem depois fica.
+  (`ultimoDoCorpo`); o que vem depois fica. A única exceção é a própria linha
+  `[Nome do (a) usuário (a)]`, que a importação **apaga** — é marcador do modelo, não
+  conteúdo, já que quem assina no SEI é a ação *Assinar*. `ehAssinaturaModelo` casa só a
+  forma entre colchetes: um nome de verdade escrito no lugar dela não casa, então
+  reimportar não apaga assinatura que alguém digitou.
 - **"Bloco em branco" é decidido por vocabulário, não por um regex do texto todo.**
   O bloco de artigos do modelo novo mistura `CAPÍTULO I`, `Seção I`, `XXXXX`, `[...]`,
   `Art. (Nº)`, `DISPOSIÇÕES FINAIS` e a cláusula de vigência. `ehPlaceholder` remove os
@@ -215,8 +219,8 @@ decisão e lista à parte o que é isento por ser lockup de marca.
   sem vazar para os outros, com os roots não-alvo intactos e um Ctrl+Z desfazendo tudo.
   No da AGR, depois das correções: os artigos saem em
   `Texto_Justificado_Recuo_Primeira_Linha_Esp_Simples` (e não no
-  `Tabela_Texto_Centralizado` do primeiro parágrafo) e `[Nome do (a) usuário (a)]`
-  sobrevive à substituição. Rodar [diagnostico-resolucao.js](diagnostico-resolucao.js)
+  `Tabela_Texto_Centralizado` do primeiro parágrafo) e a cauda do bloco sobrevive à
+  substituição, com a linha `[Nome do (a) usuário (a)]` removida à parte. Rodar [diagnostico-resolucao.js](diagnostico-resolucao.js)
   é o jeito de refazer essa medição quando o modelo mudar de novo.
 - **Falta a rodada de ponta a ponta contra a produção** do Gestão de Autos IA — a
   importação real, com a API respondendo, no modelo novo.

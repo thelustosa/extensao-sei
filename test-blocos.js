@@ -1,6 +1,7 @@
 // node test-blocos.js
 const assert = require('assert');
-const { mapearBlocos, blocosOcupados, estiloDoCorpo, ultimoDoCorpo } = require('./blocos.js');
+const { mapearBlocos, blocosOcupados, estiloDoCorpo, ultimoDoCorpo,
+        ehAssinaturaModelo } = require('./blocos.js');
 
 const ZWSP = '​';
 const REP = (s, n) => Array(n).fill(s).join(' ');
@@ -210,4 +211,30 @@ assert.strictEqual(ultimoDoCorpo(ARTIGOS_655, 'Estilo_Que_Nao_Existe'), -1,
     '-1 faz o chamador substituir o root inteiro');
 assert.strictEqual(ultimoDoCorpo(null, ARTIGO), -1);
 
+// ── ehAssinaturaModelo: a linha que a importação apaga ────────────────────
+// Exatamente como veio no dump do SEI.
+assert.ok(ehAssinaturaModelo('[Nome do (a) usuário (a)]'));
+// Variações de espaçamento e acentuação do modelo.
+assert.ok(ehAssinaturaModelo('[Nome do(a) usuario(a)]'));
+assert.ok(ehAssinaturaModelo('  [Nome do (a) usuário (a)]  '));
+assert.ok(ehAssinaturaModelo(ZWSP + '[Nome do (a) usuário (a)]'));
+
+// Assinatura de verdade NÃO casa: reimportar não pode apagar o que alguém
+// escreveu no lugar do marcador.
+assert.ok(!ehAssinaturaModelo('JOÃO DA SILVA'));
+assert.ok(!ehAssinaturaModelo('Presidente do Conselho Regulador'));
+// Nem outras linhas entre colchetes do modelo.
+assert.ok(!ehAssinaturaModelo('[...]'));
+assert.ok(!ehAssinaturaModelo('[Cargo do (a) usuário (a)]'));
+// Nem texto que só menciona a palavra sem ser o marcador.
+assert.ok(!ehAssinaturaModelo('Nome do usuário: João'));
+assert.ok(!ehAssinaturaModelo(''));
+assert.ok(!ehAssinaturaModelo(null));
+
+// No bloco de artigos real, é a única linha que sai.
+assert.deepStrictEqual(
+    ARTIGOS_655.filter((p) => ehAssinaturaModelo(p.texto)).map((p) => p.texto),
+    ['[Nome do (a) usuário (a)]']);
+
 console.log('ok');
+
