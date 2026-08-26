@@ -725,16 +725,26 @@
         } catch (e) { return []; }
     }
 
-    // Tira a linha '[Nome do (a) usuário (a)]' que o modelo deixa no fim do
-    // bloco de artigos: e marcador do modelo, nao conteudo -- quem assina no
-    // SEI e a acao Assinar. De tras pra frente, para os indices dos anteriores
-    // continuarem validos depois de cada remocao.
-    function removerAssinaturaModelo(ed, w, nome) {
+    // Limpa a cauda do bloco depois da colagem, na ordem que importa:
+    //
+    //   1. a linha '[Nome do (a) usuário (a)]' que o modelo deixa -- e marcador
+    //      do modelo, nao conteudo, ja que quem assina no SEI e a acao Assinar;
+    //   2. os paragrafos vazios que sobram no fim, que sem a assinatura viram
+    //      espaco solto no fim do documento.
+    //
+    // Nessa ordem porque a assinatura fica ENTRE os vazios: tirando ela
+    // primeiro, os tres vazios do bloco de artigos ficam contiguos no fim e
+    // saem juntos. De tras pra frente nos dois, para os indices dos paragrafos
+    // anteriores continuarem validos depois de cada remocao.
+    function limparCauda(ed, w, nome) {
         var root = ed.model.document.getRoot(nome);
         var paras = paragrafosDoRoot(ed, nome);
         for (var i = paras.length - 1; i >= 0; i--) {
             if (ehAssinaturaModelo(paras[i].texto)) w.remove(root.getChild(i));
         }
+        vaziosDoFim(paragrafosDoRoot(ed, nome)).forEach(function (i) {
+            w.remove(root.getChild(i));
+        });
     }
 
     // Ate onde a substituicao pode ir. estiloDoCorpo/ultimoDoCorpo vem de
@@ -803,11 +813,12 @@
                 // insertContent apaga o que esta no range antes de inserir,
                 // entao isto SUBSTITUI o bloco em vez de acrescentar -- e o que
                 // faz reimportar nao empilhar. O range para no ultimo paragrafo
-                // do texto corrido: o que vem depois nao e substituido em bloco,
-                // so a linha de assinatura do modelo sai, logo abaixo.
+                // do texto corrido: o que vem depois nao e substituido em
+                // bloco -- limparCauda tira so a assinatura do modelo e os
+                // vazios do fim.
                 ed.model.insertContent(frags[i],
                     alcanceDoCorpo(ed, it.bloco.nome, it.bloco.estilo));
-                removerAssinaturaModelo(ed, w, it.bloco.nome);
+                limparCauda(ed, w, it.bloco.nome);
             });
         });
 

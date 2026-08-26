@@ -112,11 +112,16 @@ Detalhes que só apareceram medindo no editor de verdade:
   `txaEditor_655` são linhas em branco e `[Nome do (a) usuário (a)]`, em
   `Texto_Centralizado`. Um `createRangeIn(root)` apagaria isso em bloco, sem avisar. Por
   isso o range vai só até o **último parágrafo com o estilo do texto corrido**
-  (`ultimoDoCorpo`); o que vem depois fica. A única exceção é a própria linha
-  `[Nome do (a) usuário (a)]`, que a importação **apaga** — é marcador do modelo, não
-  conteúdo, já que quem assina no SEI é a ação *Assinar*. `ehAssinaturaModelo` casa só a
-  forma entre colchetes: um nome de verdade escrito no lugar dela não casa, então
-  reimportar não apaga assinatura que alguém digitou.
+  (`ultimoDoCorpo`); o que vem depois fica. Da cauda, `limparCauda` remove duas coisas, nesta
+  ordem: a linha `[Nome do (a) usuário (a)]` — marcador do modelo, não conteúdo, já que
+  quem assina no SEI é a ação *Assinar* — e depois os parágrafos vazios que sobram no
+  fim, que sem ela virariam espaço solto no fim do documento. A ordem importa: a
+  assinatura fica **entre** os vazios, então só depois de tirá-la os três ficam
+  contíguos e saem juntos. `ehAssinaturaModelo` casa só a forma entre colchetes (um nome
+  de verdade escrito no lugar dela não casa, então reimportar não apaga assinatura que
+  alguém digitou), e `vaziosDoFim` para no primeiro parágrafo com conteúdo — vazio no
+  **meio** do texto é do autor — e nunca devolve o índice 0, porque um root sem nenhum
+  filho é inválido no modelo do CKEditor.
 - **"Bloco em branco" é decidido por vocabulário, não por um regex do texto todo.**
   O bloco de artigos do modelo novo mistura `CAPÍTULO I`, `Seção I`, `XXXXX`, `[...]`,
   `Art. (Nº)`, `DISPOSIÇÕES FINAIS` e a cláusula de vigência. `ehPlaceholder` remove os

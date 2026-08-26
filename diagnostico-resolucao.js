@@ -115,6 +115,8 @@
             : ed.model.createRange(ed.model.createPositionAt(root, 0),
                                    ed.model.createPositionAt(root, ultimo + 1));
     };
+    const eAssinatura = (t) => /^\[[^\]]*nome[^\]]*usu[áa]rio[^\]]*\]$/i.test(String(t || '').replace(/​/g, '').trim());
+    const eVazio = (t) => !String(t || '').replace(/​/g, '').replace(/ /g, ' ').trim();
     itens.forEach((it) => { it.estilo = estiloCorpo(it.bloco); });
     out.estilo_do_corpo = itens.map((it) => ({
         bloco: it.nome,
@@ -129,16 +131,19 @@
         ed.model.change((w) => {
             itens.forEach((it, i) => {
                 ed.model.insertContent(frags[i], alcance(it.bloco, it.estilo));
-                // A linha '[Nome do (a) usuário (a)]' e marcador do modelo:
-                // sai na importacao. De tras pra frente, para os indices dos
-                // anteriores continuarem validos.
+                // limparCauda: primeiro a linha '[Nome do (a) usuário (a)]',
+                // depois os vazios que sobram no fim. Nessa ordem porque a
+                // assinatura fica ENTRE os vazios.
                 const root = ed.model.document.getRoot(it.bloco.nome);
-                const filhos = [...root.getChildren()];
+                const txt = (c) => { let t = ''; for (const n of c.getChildren()) t += (n.data || ''); return t; };
+                let filhos = [...root.getChildren()];
                 for (let k = filhos.length - 1; k >= 0; k--) {
-                    const c = filhos[k];
-                    if (!c.is('element', 'paragraph')) continue;
-                    let t = ''; for (const n of c.getChildren()) t += (n.data || '');
-                    if (/^\[[^\]]*nome[^\]]*usu[áa]rio[^\]]*\]$/i.test(t.replace(/​/g, '').trim())) w.remove(c);
+                    if (filhos[k].is('element', 'paragraph') && eAssinatura(txt(filhos[k]))) w.remove(filhos[k]);
+                }
+                filhos = [...root.getChildren()];
+                for (let k = filhos.length - 1; k > 0; k--) {
+                    if (!eVazio(txt(filhos[k]))) break;
+                    w.remove(filhos[k]);
                 }
             });
         });
@@ -162,20 +167,23 @@
                 .map((p) => p.getAttribute('estilo') || '(sem estilo)'),
         };
     });
-    // A cauda (o que vinha depois do texto corrido) fica -- MENOS a linha
-    // '[Nome do (a) usuário (a)]', que a importacao apaga de proposito.
-    const eAssinatura = (t) => /^\[[^\]]*nome[^\]]*usu[áa]rio[^\]]*\]$/i.test(String(t || '').replace(/​/g, '').trim());
+    // A cauda do bloco: a assinatura do modelo e os vazios do fim saem, o resto
+    // com conteudo fica.
     out.cauda = itens.map((it) => {
         const depois = it.bloco.paragrafos
             .slice(it.bloco.paragrafos.map((p) => p.estilo).lastIndexOf(it.estilo) + 1)
-            .map((p) => p.texto).filter(Boolean);
+            .map((p) => p.texto);
         const agora = ed.getData({ rootName: it.bloco.nome });
+        const restantes = [...ed.model.document.getRoot(it.bloco.nome).getChildren()]
+            .map((c) => { let t = ''; if (c.getChildren) for (const n of c.getChildren()) t += (n.data || ''); return t; });
+        const comConteudo = depois.filter((t) => !eVazio(t) && !eAssinatura(t));
         return {
             bloco: it.nome,
             assinatura_do_modelo: depois.filter(eAssinatura),
             assinatura_removida: depois.filter(eAssinatura).every((t) => !agora.includes(t)),
-            resto: depois.filter((t) => !eAssinatura(t)),
-            resto_preservado: depois.filter((t) => !eAssinatura(t)).every((t) => agora.includes(t)),
+            paragrafos_agora: restantes,
+            termina_vazio: restantes.length > 1 && eVazio(restantes[restantes.length - 1]),
+            resto_com_conteudo_preservado: comConteudo.every((t) => agora.includes(t)),
         };
     });
     out.roots_intocados_mudaram = roots

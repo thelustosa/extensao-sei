@@ -1,7 +1,7 @@
 // node test-blocos.js
 const assert = require('assert');
 const { mapearBlocos, blocosOcupados, estiloDoCorpo, ultimoDoCorpo,
-        ehAssinaturaModelo } = require('./blocos.js');
+        ehAssinaturaModelo, vaziosDoFim } = require('./blocos.js');
 
 const ZWSP = '​';
 const REP = (s, n) => Array(n).fill(s).join(' ');
@@ -235,6 +235,52 @@ assert.ok(!ehAssinaturaModelo(null));
 assert.deepStrictEqual(
     ARTIGOS_655.filter((p) => ehAssinaturaModelo(p.texto)).map((p) => p.texto),
     ['[Nome do (a) usuário (a)]']);
+
+// ── vaziosDoFim: o espaço solto que sobra depois da assinatura ────────────
+// O estado real do bloco de artigos logo depois da colagem e da remoção da
+// assinatura: dois artigos e três parágrafos em branco.
+const NBSP = ' ';
+assert.deepStrictEqual(
+    vaziosDoFim([
+        { texto: 'Art. 1º. Ratificar a decisão.' },
+        { texto: 'Art. 2º. Entra em vigor.' },
+        { texto: '' },
+        { texto: '' },
+        { texto: '' },
+    ]),
+    [4, 3, 2], 'de trás pra frente, para os índices anteriores seguirem válidos');
+
+// Vazio no MEIO do texto é do autor, não do modelo: para no primeiro com conteúdo.
+assert.deepStrictEqual(vaziosDoFim([
+    { texto: 'Art. 1º.' }, { texto: '' }, { texto: 'Art. 2º.' },
+]), []);
+
+// ZWSP e nbsp contam como vazio — o modelo usa os dois de espaçador.
+assert.deepStrictEqual(vaziosDoFim([
+    { texto: 'Art. 1º.' }, { texto: ZWSP }, { texto: NBSP + ' ' },
+]), [2, 1]);
+
+// Nunca devolve o índice 0: um root sem nenhum filho é inválido no CKEditor.
+assert.deepStrictEqual(vaziosDoFim([{ texto: '' }, { texto: '' }]), [1]);
+assert.deepStrictEqual(vaziosDoFim([{ texto: '' }]), []);
+assert.deepStrictEqual(vaziosDoFim([]), []);
+assert.deepStrictEqual(vaziosDoFim(null), []);
+
+// A ordem importa: a assinatura fica ENTRE os vazios, então só depois de
+// removê-la os três ficam contíguos no fim e saem juntos.
+const CAUDA_REAL = [
+    { texto: 'Art. 1º. Ratificar a decisão.' },
+    { texto: 'Art. 2º. Entra em vigor.' },
+    { texto: '' },
+    { texto: '' },
+    { texto: '[Nome do (a) usuário (a)]' },
+    { texto: '' },
+];
+assert.deepStrictEqual(vaziosDoFim(CAUDA_REAL), [5],
+    'com a assinatura no meio, só o último vazio sai');
+assert.deepStrictEqual(
+    vaziosDoFim(CAUDA_REAL.filter((p) => !ehAssinaturaModelo(p.texto))),
+    [4, 3, 2], 'removida a assinatura, os três saem');
 
 console.log('ok');
 

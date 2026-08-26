@@ -156,6 +156,30 @@ function ehAssinaturaModelo(t) {
     return RE_ASSINATURA_MODELO.test(String(t || '').replace(/​/g, '').trim());
 }
 
+// Indices dos paragrafos VAZIOS no fim do bloco, de tras pra frente.
+//
+// Sem a linha de assinatura, o que sobrava no fim do bloco de artigos eram tres
+// paragrafos em branco -- espaco solto no fim do documento. Para no primeiro
+// paragrafo com conteudo: vazio no MEIO do texto e do autor, nao do modelo.
+//
+// Nunca devolve o indice 0: um root sem nenhum filho e invalido no modelo do
+// CKEditor, entao ao menos um paragrafo tem que ficar.
+function vaziosDoFim(paragrafos) {
+    var ps = paragrafos || [];
+    var out = [];
+    for (var i = ps.length - 1; i > 0; i--) {
+        if (!ehVazio(ps[i] && ps[i].texto)) break;
+        out.push(i);
+    }
+    return out;
+}
+
+// U+200B e &nbsp; contam como vazio: o modelo usa os dois de espacador, e um
+// paragrafo com so isso nao tem conteudo nenhum na tela.
+function ehVazio(t) {
+    return !String(t || '').replace(/​/g, '').replace(/ /g, ' ').trim();
+}
+
 // Blocos que ja tem texto do usuario -- os que uma colagem destruiria.
 function blocosOcupados(blocos) {
     return ['ementa', 'considerandos', 'artigos'].filter(function (k) {
@@ -171,5 +195,6 @@ if (typeof module !== 'undefined') {
         estiloDoCorpo: estiloDoCorpo,
         ultimoDoCorpo: ultimoDoCorpo,
         ehAssinaturaModelo: ehAssinaturaModelo,
+        vaziosDoFim: vaziosDoFim,
     };
 }
