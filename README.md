@@ -222,10 +222,11 @@ decisão e lista à parte o que é isento por ser lockup de marca.
   (`45.1.0-infra-202508082051`, com bloco `RESOLVE:`) e o da AGR
   (`45.1.0-infra-202602092037`, sem ele). Nos dois, cada bloco recebeu o seu conteúdo,
   sem vazar para os outros, com os roots não-alvo intactos e um Ctrl+Z desfazendo tudo.
-  No da AGR, depois das correções: os artigos saem em
+  No da AGR, depois das correções, o bloco de
+  artigos sai dos 17 parágrafos do modelo para exatamente os 2 importados, em
   `Texto_Justificado_Recuo_Primeira_Linha_Esp_Simples` (e não no
-  `Tabela_Texto_Centralizado` do primeiro parágrafo) e a cauda do bloco sobrevive à
-  substituição, com a linha `[Nome do (a) usuário (a)]` removida à parte. Rodar [diagnostico-resolucao.js](diagnostico-resolucao.js)
+  `Tabela_Texto_Centralizado` do primeiro parágrafo, que era o defeito): sem a linha
+  `[Nome do (a) usuário (a)]` e sem os vazios do fim. Rodar [diagnostico-resolucao.js](diagnostico-resolucao.js)
   é o jeito de refazer essa medição quando o modelo mudar de novo.
 - **Falta a rodada de ponta a ponta contra a produção** do Gestão de Autos IA — a
   importação real, com a API respondendo, no modelo novo.
