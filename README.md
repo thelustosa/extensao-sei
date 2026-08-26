@@ -7,6 +7,8 @@ modelo.
 Status: A extensão vem sendo usada diariamente! Até o momento, está funcionando perfeitamente na versão SEI 5.0.4.
 Contribua: Sugestões, melhorias, dicas e feedbacks são muito bem-vindos!
 
+> 📖 **Transparência e Arquitetura**: Para uma análise detalhada dos fluxos de dados, isolamento de segurança, diagramas Mermaid e heurísticas de colagem, consulte [FLUXO.md](FLUXO.md).
+
 ## Linkar protocolos
 
 Com o documento aberto no editor: **Ctrl+Shift+K** ou o botão *"Linkar protocolos"*, no
@@ -189,6 +191,7 @@ node test-deteccao.js     # detecção dos números
 node test-blocos.js       # mapeamento dos blocos da Resolução
 node test-contraste.js    # contraste WCAG de todos os pares de cor do painel
 node test-visual.js       # renderiza o painel → test-visual.html + .png
+node test-pacote.js       # o .zip publicado bate com o manifest e com a árvore
 ```
 
 Os dois primeiros cobrem a detecção e o mapeamento dos blocos, independentes do editor.
@@ -210,6 +213,27 @@ e não uma reprodução do logo do SEI.
 O verde da marca só rende 4,29:1 com texto branco, abaixo do mínimo, então quem carrega
 texto usa `#007A4E` (5,4:1) e a marca fica nos acentos. `test-contraste.js` guarda essa
 decisão e lista à parte o que é isento por ser lockup de marca.
+
+## Empacotamento
+
+`node empacotar.js` gera o `sei-agr-extensao.zip` — o pacote que o Gestão de Autos IA
+serve em `/download/extensao`. A lista de arquivos sai do **próprio `manifest.json`**
+(content scripts, service worker, ícones) mais o README: digitar a lista à mão foi o que
+produziu quatro pacotes seguidos sem a pasta `icons/`, e um manifest que declara
+`"icons"` apontando para PNG ausente faz o Chrome **recusar a extensão inteira**, com um
+erro que só aparece na hora de instalar. `node test-pacote.js` trava as duas falhas: o
+arquivo declarado e ausente, e o zip velho em relação à árvore.
+
+Usa o `bsdtar` do Windows (`C:\Windows\System32	ar.exe`), e não o `Compress-Archive`
+do PowerShell: este grava os caminhos com barra **invertida** (`icons\icon-16.png`), e o
+formato ZIP exige barra normal — o Chrome não encontraria os ícones.
+
+Depois de gerar, copie para o outro repositório e faça o deploy, senão a página de
+download continua servindo o pacote antigo:
+
+```
+cp sei-agr-extensao.zip ../gestao-de-autos-ia/static/downloads/
+```
 
 ## Pendências
 
