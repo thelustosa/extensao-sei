@@ -169,7 +169,7 @@ Sobre autenticação e rede — o ponto que define a arquitetura:
 - [ponte.js](ponte.js) existe porque `"world": "MAIN"` não enxerga `chrome.runtime`.
   Ele roda no mundo ISOLATED e só repassa mensagens. O token **nunca** chega ao
   contexto da página do SEI; o que trafega pela ponte são três ações de leitura.
-- A URL da API é `https://gestao-autos.duckdns.org`, sobrescrevível com
+- A URL da API é `https://ia-regulatoria.duckdns.org`, sobrescrevível com
   `chrome.storage.local.set({apiBase: 'http://127.0.0.1:8080'})` para testar local — e o
   `set` tem que rodar no console do **service worker** da extensão, não no de uma página.
   `127.0.0.1` e `localhost` são origens distintas: o login precisa ser feito no mesmo

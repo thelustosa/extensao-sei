@@ -37,7 +37,7 @@ A extensão opera no navegador do usuário sob o modelo **Manifest V3 (MV3)** do
 ### Princípios Fundamentais de Transparência
 * **Nenhuma Senha é Coletada ou Armazenada**: A extensão não possui telas de login nem armazena credenciais. A autenticação com o Gestão de Autos IA é herdada da sessão ativa do usuário no navegador via cookies seguros (`access_token_cookie`).
 * **Isolamento Estrito de Tokens**: O token JWT obtido nunca é injetado no DOM ou no contexto da página do SEI (`MAIN world`). Ele reside exclusivamente na memória do Service Worker.
-* **Sem Chamadas Ocultas ou Telemetria**: Apenas dois destinos de rede são acessados: o próprio servidor do SEI do Estado de Goiás (`*.go.gov.br`) e a API do Gestão de Autos IA (`gestao-autos.duckdns.org` ou instâncias locais autorizadas).
+* **Sem Chamadas Ocultas ou Telemetria**: Apenas dois destinos de rede são acessados: o próprio servidor do SEI do Estado de Goiás (`*.go.gov.br`) e a API do Gestão de Autos IA (`ia-regulatoria.duckdns.org` ou instâncias locais autorizadas).
 * **Idempotência e Não-Destrutividade**: Qualquer alteração efetuada no editor do SEI é registrada em uma única transação atômica (`model.change`), permitindo que a operação completa seja desfeita com um único `Ctrl+Z`.
 
 ---

@@ -637,7 +637,7 @@
     // ═══════════════════════════════════════════════════════════════════════
     // Importar Resolucao Gerada
     //
-    // Busca a minuta no Gestao de Autos IA (gestao-autos.duckdns.org) e cola
+    // Busca a minuta no Gestao de Autos IA (ia-regulatoria.duckdns.org) e cola
     // ementa / considerandos / artigos nos blocos correspondentes do modelo de
     // Resolucao do SEI.
     // ═══════════════════════════════════════════════════════════════════════

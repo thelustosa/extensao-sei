@@ -12,13 +12,17 @@
 // (JWT_TOKEN_LOCATION = ["cookies", "headers"]) -- e o cookie, sendo
 // SameSite=Lax, nunca viajaria sozinho numa requisicao cross-site.
 
-const API_PADRAO = 'https://gestao-autos.duckdns.org';
+const API_PADRAO = 'https://ia-regulatoria.duckdns.org';
+// Dominio anterior, que hoje so redireciona para o atual. Quem ja usava a
+// extensao tem ele salvo em apiBase, e la nao existe mais cookie de sessao.
+const API_ANTIGA = 'https://gestao-autos.duckdns.org';
 // Nome padrao do cookie do flask-jwt-extended (JWT_ACCESS_COOKIE_NAME).
 const COOKIE_JWT = 'access_token_cookie';
 
 async function baseApi() {
     const { apiBase } = await chrome.storage.local.get('apiBase');
-    return (apiBase || API_PADRAO).replace(/\/+$/, '');
+    const base = (apiBase || API_PADRAO).replace(/\/+$/, '');
+    return base === API_ANTIGA ? API_PADRAO : base;
 }
 
 async function token(base) {
