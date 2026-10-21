@@ -13,8 +13,8 @@
 // SameSite=Lax, nunca viajaria sozinho numa requisicao cross-site.
 
 const API_PADRAO = 'https://ia-regulatoria.duckdns.org';
-// Dominio anterior, que hoje so redireciona para o atual. Quem ja usava a
-// extensao tem ele salvo em apiBase, e la nao existe mais cookie de sessao.
+// Dominio anterior, desativado: nao atende mais. Quem ja usava a extensao
+// tem ele salvo em apiBase, e sem esta troca toda chamada iria para la.
 const API_ANTIGA = 'https://gestao-autos.duckdns.org';
 // Nome padrao do cookie do flask-jwt-extended (JWT_ACCESS_COOKIE_NAME).
 const COOKIE_JWT = 'access_token_cookie';
